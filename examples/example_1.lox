@@ -1,0 +1,8 @@
+class Test {
+    test() {
+        print super.inexistent();
+    }
+}
+
+Test().test();
+super.not_in_a_class();
