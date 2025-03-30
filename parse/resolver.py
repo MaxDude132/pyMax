@@ -49,7 +49,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.scopes[-1]["super"] = True
 
         self.begin_scope()
-        self.scopes[-1]["this"] = True
+        self.scopes[-1]["self"] = True
 
         for method in statement.methods:
             declaration = FunctionType.METHOD
@@ -175,8 +175,8 @@ class Resolver(ExpressionVisitor, StatementVisitor):
 
         self.begin_scope()
         for param in function.params:
-            self.declare(param)
-            self.define(param)
+            self.declare(param.name)
+            self.define(param.name)
 
         self.resolve_many(function.body)
         self.end_scope()
@@ -192,9 +192,9 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         self.resolve(expression.obj)
         self.resolve(expression.value)
 
-    def visit_this(self, expression):
+    def visit_self(self, expression):
         if self.current_class == ClassType.NONE:
-            self.parser_error(expression.keyword, "Can't use 'this' outside of a class.")
+            self.parser_error(expression.keyword, "Can't use 'self' outside of a class.")
 
         self.resolve_local(expression, expression.keyword)
 
@@ -205,4 +205,3 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.parser_error(expression.keyword, "Cannot use 'super' in a class with no superclass.")
 
         self.resolve_local(expression, expression.keyword)
-

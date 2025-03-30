@@ -2,7 +2,7 @@ from typing import Callable
 
 from lex import Token
 from lex import TokenType
-from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, This, Super
+from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair
 from .statements import Statement, Print, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class
 from errors import ParserError
 
@@ -70,7 +70,7 @@ class ParserControl:
             
             if self.peek().type_ in (
                 TokenType.CLASS,
-                TokenType.FUN,
+                TokenType.LAMBDA,
                 TokenType.VAR,
                 TokenType.FOR,
                 TokenType.IF,
@@ -135,14 +135,24 @@ class ExpressionsParser(ParserControl):
         return expression
     
     def comparison(self) -> Expression:
-        expression = self.term()
+        expression = self.pair()
 
         while self.match(
             TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL
         ):
             operator = self.previous()
-            right = self.term()
+            right = self.pair()
             expression = Binary(expression, operator, right)
+
+        return expression
+    
+    def pair(self) -> Expression:
+        expression = self.term()
+        
+        while self.match(TokenType.RIGHT_ARROW):
+            operator = self.previous()
+            right = self.term()
+            expression = Pair(expression, operator, right)
 
         return expression
     
@@ -198,17 +208,18 @@ class ExpressionsParser(ParserControl):
         
         if self.match(TokenType.SUPER):
             keyword = self.previous()
-            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
-            method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+            method = None
+            if self.match(TokenType.DOT):
+                method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
             return Super(keyword, method)
         
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
         
-        if self.match(TokenType.THIS):
-            return This(self.previous())
+        if self.match(TokenType.SELF):
+            return Self(self.previous())
         
-        if self.match(TokenType.FUN):
+        if self.match(TokenType.LAMBDA):
             return self.function_body("lambda")
         
         if self.match(TokenType.IDENTIFIER):
@@ -234,16 +245,24 @@ class ExpressionsParser(ParserControl):
         return Call(expression, paren, arguments)
     
     def function_body(self, kind: str):
-        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
-
-        parameters: list[Token] = []
-        if not self.check(TokenType.RIGHT_PAREN):
+        parameters: list[Parameter] = []
+        if self.match(TokenType.COLON):
+            has_had_default = False
             while True:
-                parameters.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+                type_ = self.consume(TokenType.IDENTIFIER, "Expect type.")
+                name = self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
+                default = None
+                if self.match(TokenType.EQUAL):
+                    default = self.expression()
+                    has_had_default = True
+
+                if has_had_default and default is None:
+                    raise self.error(name, "Cannot set a parameter without a default value after a parameter with a default value.")
+
+                parameters.append(Parameter(type_, name, default))
                 if not self.match(TokenType.COMMA):
                     break
 
-        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
         self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
         body = self.block()
         return Lambda(parameters, body)
@@ -254,11 +273,12 @@ class StatementsParser(ExpressionsParser):
         try:
             if self.match(TokenType.CLASS):
                 return self.class_declaration()
-            if self.check(TokenType.FUN) and self.check_next(TokenType.IDENTIFIER):
-                self.consume(TokenType.FUN, None)
+            if self.check(TokenType.IDENTIFIER) and (
+                self.check_next(TokenType.LEFT_BRACE) or self.check_next(TokenType.COLON)
+            ):
                 return self.function("function")
-            if self.match(TokenType.VAR):
-                return self.var_declaration()
+            # if self.check(TokenType.IDENTIFIER) and not self.check_next(TokenType.LEFT_PAREN):
+            #     return self.var_declaration()
             
             return self.statement()
         except ParserError:
@@ -268,7 +288,7 @@ class StatementsParser(ExpressionsParser):
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
 
         superclasses: list[Variable] = []
-        if self.match(TokenType.LEFT_PAREN):
+        if self.match(TokenType.COLON):
             while True:
                 self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
                 superclasses.append(
@@ -276,8 +296,6 @@ class StatementsParser(ExpressionsParser):
                 )
                 if not self.match(TokenType.COMMA):
                     break
-
-            self.consume(TokenType.RIGHT_PAREN, "Expect ')' after superclasses.")
 
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
 

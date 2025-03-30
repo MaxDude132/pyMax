@@ -1,0 +1,6 @@
+- implement lists (basics: add, pop, iterate, next)
+- implement for-loops
+- implement magic functions iterate and next
+- implement magic functions equals and greaterThan
+- implement maps
+- implement type checking

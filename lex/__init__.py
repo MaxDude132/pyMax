@@ -1,1 +1,2 @@
-from .lexer import Lexer, Token, TokenType
+from .lexer import Lexer, Token
+from .token_type import TokenType

@@ -9,6 +9,9 @@ if TYPE_CHECKING:
 
 
 class ExpressionVisitor:
+    def visit_pair(self, expression: Pair):
+        pass
+
     def visit_binary(self, expression: Binary):
         pass
 
@@ -33,7 +36,7 @@ class ExpressionVisitor:
     def visit_super(self, expression: Super):
         pass
 
-    def visit_this(self, expression: This):
+    def visit_self(self, expression: Self):
         pass
 
     def visit_unary(self, expression: Unary):
@@ -54,6 +57,13 @@ class Expression:
     def accept(self, visitor: ExpressionVisitor):
         func = getattr(visitor, f'visit_{self.__class__.__name__.lower()}')
         return func(self)
+    
+
+@dataclass
+class Pair(Expression):
+    left: Expression
+    operator: Token
+    right: Expression
 
 
 @dataclass
@@ -103,14 +113,14 @@ class Set(Expression):
 @dataclass
 class Super(Expression):
     keyword: Token
-    method: Token
+    method: Token | None
 
     def __hash__(self):
         return id(self)
 
 
 @dataclass
-class This(Expression):
+class Self(Expression):
     keyword: Token
 
     def __hash__(self):
@@ -136,8 +146,18 @@ class Assignment(Expression):
     name: Token
     value: Expression
 
+    def __hash__(self):
+        return id(self)
+
+
+@dataclass
+class Parameter:
+    type_: Token
+    name: Token
+    default: Expression | None = None
+
 
 @dataclass
 class Lambda(Expression):
-    params: list[Token]
+    params: list[Parameter]
     body: list[Statement]

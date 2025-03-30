@@ -61,7 +61,7 @@ class Lox:
         if self.had_runtime_error:
             return
         
-        # AstPrinter().print(statements)
+        AstPrinter().print(statements)
 
     def error(self, line: int, message: str):
         self.report(line, "", message)

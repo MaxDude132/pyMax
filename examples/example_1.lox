@@ -1,8 +1,8 @@
-class Test {
-    test() {
-        print super.inexistent();
-    }
-}
+my_list = list(1, 2, 3);
+my_map = map(1 -> "test", 2 -> "does it work?");
 
-Test().test();
-super.not_in_a_class();
+my_list.add(5);
+print my_list.iterate();
+
+print my_list;
+print my_map;

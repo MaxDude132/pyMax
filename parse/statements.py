@@ -33,6 +33,9 @@ class StatementVisitor:
     def visit_while_statement(self, statement: WhileStatement):
         pass
 
+    def visit_for_statement(self, statement: ForStatement):
+        pass
+
 
 @dataclass
 class Statement:
@@ -95,4 +98,10 @@ class ReturnStatement(Statement):
 @dataclass
 class WhileStatement(Statement):
     condition: Expression
+    body: Statement
+
+
+@dataclass
+class ForStatement(Statement):
+    name: Token
     body: Statement

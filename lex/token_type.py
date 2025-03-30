@@ -7,6 +7,8 @@ class TokenType(StrEnum):
     RIGHT_PAREN = "RIGHT_PAREN"
     LEFT_BRACE = "LEFT_BRACE"
     RIGHT_BRACE = "RIGHT_BRACE"
+    LEFT_BRACKET = "LEFT_BRACKET"
+    RIGHT_BRACKET = "RIGHT_BRACKET"
     COMMA = "COMMA"
     DOT = "DOT"
     MINUS = "MINUS"
@@ -28,25 +30,25 @@ class TokenType(StrEnum):
     LESS_EQUAL = "LESS_EQUAL"
     RIGHT_ARROW = "RIGHT_ARROW"
     
-    # Literals.
+    # Literals
     IDENTIFIER = "IDENTIFIER"
     STRING = "STRING"
     NUMBER = "NUMBER"
     
-    # Keywords.
+    # Keywords
     AND = "AND"
     CLASS = "CLASS"
     ELSE = "ELSE"
     FALSE = "FALSE"
-    FUN = "FUN"
     FOR = "FOR"
     IF = "IF"
+    LAMBDA = "LAMBDA"
     NIL = "NIL"
     OR = "OR"
     PRINT = "PRINT"
     RETURN = "RETURN"
+    SELF = "SELF"
     SUPER = "SUPER"
-    THIS = "THIS"
     TRUE = "TRUE"
     VAR = "VAR"
     WHILE = "WHILE"

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from .expressions import Lambda
+from .expressions import Lambda, Parameter
 from .environment import Environment
 from lex import Token, TokenType
 from errors import InterpreterError
@@ -19,8 +19,14 @@ class InternalCallable:
     def call(self, interpreter: "Interpreter", arguments: list[Any]) -> Any | None:
         pass
 
-    def arity(self) -> int:
-        pass
+    def check_arity(self, arg_count: int) -> bool:
+        return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
+
+    def upper_arity(self) -> int:
+        return 0
+
+    def lower_arity(self) -> int:
+        return 0
 
     def __str__(self) -> str:
         func_name = ''.join(
@@ -31,7 +37,7 @@ class InternalCallable:
 
 
 class FunctionCallable(InternalCallable):
-    def __init__(self, name: str, declaration: Lambda, closure: Environment, class_instance: InstanceCallable | None = None):
+    def __init__(self, name: Token | None, declaration: Lambda, closure: Environment, class_instance: InstanceCallable | None = None):
         self.name = name
         self.declaration = declaration
         self.closure = closure
@@ -40,7 +46,7 @@ class FunctionCallable(InternalCallable):
     def call(self, interpreter: "Interpreter", arguments: list[Any]):
         environment = Environment(self.closure)
         for i, argument in enumerate(arguments):
-            environment.define(self.declaration.params[i], argument)
+            environment.define(self.declaration.params[i].name, argument)
 
         try:
             interpreter.execute_block(self.declaration.body, environment)
@@ -52,27 +58,33 @@ class FunctionCallable(InternalCallable):
         
         return self.return_self()
 
-    def arity(self):
+    def check_arity(self, arg_count: int) -> bool:
+        return arg_count <= self.upper_arity() and arg_count >= self.lower_arity()
+
+    def upper_arity(self) -> int:
         return len(self.declaration.params)
+
+    def lower_arity(self) -> int:
+        return len([arg for arg in self.declaration.params if arg.default is None])
 
     def bind(self, instance: InstanceCallable) -> FunctionCallable:
         environment = Environment(self.closure)
-        environment.define(Token(TokenType.IDENTIFIER, "this", None, -1), instance)
+        environment.define(Token(TokenType.IDENTIFIER, "self", None, -1), instance)
         return FunctionCallable(self.name, self.declaration, environment, instance)
     
     def return_self(self) -> Any | None:
         if self.class_instance is not None:
-            return self.closure.get_at(0, "this")
+            return self.closure.get_at(0, "self")
 
     def __str__(self) -> str:
         if self.name is not None:
-            return f"<function {self.name}>"
+            return f"<function {self.name.lexeme}>"
         else:
             return "<lambda>"
 
 
 class ClassCallable(InternalCallable):
-    def __init__(self, name: str, superclasses: list[ClassCallable], methods: dict[str, FunctionCallable]):
+    def __init__(self, name: Token, superclasses: list[ClassCallable], methods: dict[str, FunctionCallable]):
         self.name = name
         self.superclasses = superclasses
         self.methods = methods
@@ -84,11 +96,23 @@ class ClassCallable(InternalCallable):
             initialiser.bind(instance).call(interpreter, arguments)
         return instance
     
-    def arity(self):
+    def check_arity(self, arg_count: int) -> bool:
+        initialiser = self.find_method(Token(None, "init", None, None))
+        if initialiser is None:
+            return arg_count == 0
+        return initialiser.check_arity(arg_count)
+
+    def upper_arity(self) -> int:
         initialiser = self.find_method(Token(None, "init", None, None))
         if initialiser is None:
             return 0
-        return initialiser.arity()
+        return initialiser.upper_arity()
+
+    def lower_arity(self) -> int:
+        initialiser = self.find_method(Token(None, "init", None, None))
+        if initialiser is None:
+            return 0
+        return initialiser.lower_arity()
     
     def find_method(self, name: Token, check_supers: bool = True, errored: bool = False) -> FunctionCallable | None:
         if name.lexeme in self.methods:
@@ -109,7 +133,7 @@ class ClassCallable(InternalCallable):
                 return value
 
     def __str__(self) -> str:
-        return f"<class {self.name}>"
+        return f"<class {self.name.lexeme}>"
 
 
 class InstanceCallable(InternalCallable):
@@ -132,5 +156,3 @@ class InstanceCallable(InternalCallable):
 
     def __str__(self) -> str:
         return f"<instanceof {self.klass.name}>"
-
-

@@ -6,6 +6,7 @@ from .expressions import ExpressionVisitor, Expression
 from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from native_functions import NATIVE_FUNCTIONS
+from native_functions.main import BaseInternalClass
 from errors import InterpreterError
 
 
@@ -19,9 +20,11 @@ class InterpreterBase:
             token = Token(
                 TokenType.IDENTIFIER, name, None, -1
             )
-            self.globals.define(token, func())
+            self.globals.define(token, func(self))
 
         self.environment = self.globals
+
+        self.current_call: InternalCallable | None = None
 
     def execute(self, statement: Statement):
         statement.accept(self)
@@ -77,11 +80,12 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             arguments.append(self.evaluate(argument))
 
         if not isinstance(callee, InternalCallable):
-            print(callee)
             raise InterpreterError(expression.paren, "Can only call functions and classes.")
         
-        if len(arguments) != callee.arity():
-            raise InterpreterError(expression.paren, f"Expected {callee.arity()} arguments but got {len(arguments)}.")
+        self.current_call = callee
+        
+        if not callee.check_arity(len(arguments)):
+            raise InterpreterError(expression.paren, f"Expected between {callee.lower_arity()} and {callee.upper_arity()} arguments but got {len(arguments)}.")
 
         return callee.call(self, arguments)
     
@@ -89,6 +93,8 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         obj = self.evaluate(expression.obj)
         if isinstance(obj, InstanceCallable):
             return obj.get(expression.name)
+        if isinstance(obj, BaseInternalClass):
+            return obj.get_method(expression.name)
         
         raise InterpreterError(expression.name, "Only instances have properties.")
     
@@ -122,16 +128,16 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     def visit_super(self, expression):
         distance = self.locals.get(expression)
         superclass: ClassCallable = self.environment.get_at(distance, "super")
-        obj = self.environment.get_at(distance - 1, "this")
+        obj = self.environment.get_at(distance - 1, "self")
 
-        method = superclass.find_method(expression.method, check_supers=False)
+        method = superclass.find_method(expression.method or self.current_call.name, check_supers=False)
 
         if method is None:
             raise InterpreterError(expression.method, f"Undefined property '{expression.method.lexeme}'.")
 
         return method.bind(obj)
     
-    def visit_this(self, expression):
+    def visit_self(self, expression):
         return self.look_up_variable(expression.keyword, expression)
     
     def visit_unary(self, expression):
@@ -169,6 +175,9 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     def visit_lambda(self, expression):
         return FunctionCallable(None, expression, self.environment)
     
+    def visit_pair(self, expression):
+        return (self.evaluate(expression.left), self.evaluate(expression.right))
+    
     def evaluate(self, expression: Expression):
         return expression.accept(self)
     
@@ -184,7 +193,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         
         raise InterpreterError(operator, "Operands must be a number.")
     
-    def stringify(self, obj: Any):
+    def stringify(self, obj: Any, keep_string_quotes: bool = False):
         if obj is None:
             return "nil"
         
@@ -192,10 +201,10 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             text = str(obj)
             if text.endswith(".0"):
                 text = text[:-2]
-
             return text
+
         
-        return str(obj)
+        return f'"{str(obj)}"' if keep_string_quotes else str(obj) 
 
 
 class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
@@ -203,8 +212,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         self.evaluate(statement.expression)
 
     def visit_function(self, statement):
-        name = statement.name.lexeme
-        function = FunctionCallable(name, statement.function, self.environment)
+        function = FunctionCallable(statement.name, statement.function, self.environment)
         self.environment.define(statement.name, function)
 
     def visit_print(self, statement):
@@ -232,7 +240,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
 
         methods: dict[str, FunctionCallable] = {}
         for method in statement.methods:
-            function = FunctionCallable(method.name.lexeme, method.function, self.environment)
+            function = FunctionCallable(method.name, method.function, self.environment)
             methods[method.name.lexeme] = function
 
         klass = ClassCallable(statement.name.lexeme, superclasses, methods)

@@ -9,9 +9,10 @@ VARIABLE_VALUE_SENTINEL = object()
 
 
 class Environment:
-    def __init__(self, enclosing: Environment | None = None):
+    def __init__(self, enclosing: Environment | None = None, name: str | None = None):
         self.values: dict[str, Any] = {}
         self.enclosing = enclosing
+        self.name = name
 
     def get(self, name: Token) -> Any:
         if name.lexeme in self.values:
@@ -26,9 +27,6 @@ class Environment:
         return self.ancestor(distance).values.get(name)
 
     def define(self, name: Token, value: Any = VARIABLE_VALUE_SENTINEL):
-        if name.lexeme in self.values:
-            raise InterpreterError(name, f"Variable {name.lexeme} already defined.")
-
         self.values[name.lexeme] = value
 
     def ancestor(self, distance: int):
@@ -38,16 +36,17 @@ class Environment:
 
         return environment
 
-    def assign(self, name: Token, value: Any):
+    def assign(self, name: Token, value: Any, only_if_found: bool = False):
         if name.lexeme in self.values:
             self.values[name.lexeme] = value
             return
 
         if self.enclosing is not None:
-            self.enclosing.assign(name, value)
+            self.enclosing.assign(name, value, True)
             return
             
-        raise InterpreterError(name, f"Variable {name.lexeme} undefined.")
+        if not only_if_found:
+            self.values[name.lexeme] = value
     
     def assign_at(self, distance: int, name: Token, value: Any):
         self.ancestor(distance).values[name.lexeme] = value

@@ -105,11 +105,14 @@ class AstPrinter(Visitor):
     def visit_set(self, expression):
         return self.parenthesize(f"set {expression.name.lexeme}", expression.value, expression.obj)
     
-    def visit_this(self, expression):
+    def visit_self(self, expression):
         return self.parenthesize(f"var {expression.keyword.lexeme}")
     
     def visit_super(self, expression):
         return self.parenthesize(f"super {expression.method.lexeme}")
+    
+    def visit_pair(self, expression):
+        return self.parenthesize("pair", expression.left, expression.right)
     
     def parenthesize(self, name: str, *expressions: Expression) -> str:
         string = f"({name}"

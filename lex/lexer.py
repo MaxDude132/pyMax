@@ -23,14 +23,14 @@ KEYWORDS = {
     "else": TokenType.ELSE,
     "false": TokenType.FALSE,
     "for": TokenType.FOR,
-    "fun": TokenType.FUN,
     "if": TokenType.IF,
+    "lambda": TokenType.LAMBDA,
     "nil": TokenType.NIL,
     "or": TokenType.OR,
     "print": TokenType.PRINT,
     "return": TokenType.RETURN,
+    "self": TokenType.SELF,
     "super": TokenType.SUPER,
-    "this": TokenType.THIS,
     "true": TokenType.TRUE,
     "var": TokenType.VAR,
     "while": TokenType.WHILE,
@@ -70,14 +70,18 @@ class Lexer:
                 self.add_token(TokenType.LEFT_BRACE)
             case '}': 
                 self.add_token(TokenType.RIGHT_BRACE)
+            case '[':
+                self.add_token(TokenType.LEFT_BRACKET)
+            case ']':
+                self.add_token(TokenType.RIGHT_BRACKET)
             case ',': 
                 self.add_token(TokenType.COMMA)
             case '.': 
                 self.add_token(TokenType.DOT)
-            case '-': 
-                self.add_token(TokenType.MINUS)
             case '+': 
                 self.add_token(TokenType.PLUS)
+            case ':': 
+                self.add_token(TokenType.COLON)
             case ';': 
                 self.add_token(TokenType.SEMICOLON)
             case '*': 
@@ -92,14 +96,24 @@ class Lexer:
             case '>':
                 self.add_token(TokenType.GREATER_EQUAL if self.match('=') else TokenType.GREATER)
 
-            case '/':
-                if self.match('/'):
-                    while (self.peek() != '\n' and not self.is_at_end()):
+            case '-':
+                if self.match('-'):
+                    while self.peek() != '\n' and not self.is_at_end():
                         self.advance()
+                elif self.match('*'):
+                    while not (self.peek() != '*' and self.peek_next() != '-') and not self.is_at_end():
+                        self.advance()
+                elif self.match('>'):
+                    self.add_token(TokenType.RIGHT_ARROW)
+                else:
+                    self.add_token(TokenType.MINUS)
+            case '/': 
+                if self.match('/'):
+                    self.add_token(TokenType.DOUBLE_SLASH)
                 else:
                     self.add_token(TokenType.SLASH)
 
-            case '"' | "'":
+            case '"' | "'" | "`":
                 self.string(c)
 
             case ' ' | '\r' | '\t':
