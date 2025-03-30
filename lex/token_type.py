@@ -18,6 +18,7 @@ class TokenType(StrEnum):
     SLASH = "SLASH"
     DOUBLE_SLASH = "DOUBLE_SLASH"
     STAR = "STAR"
+    NEWLINE = "NEWLINE"
     
     # One or two character tokens.
     BANG = "BANG"

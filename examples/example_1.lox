@@ -1,8 +1,8 @@
-my_list = list(1, 2, 3);
-print my_list.get(0);
+my_list = list(1, 2, 3)
+print my_list.get(0)
 
-my_map = map(1 -> "test", 2 -> "yes");
-my_map.add(3, "no");
-print my_map.get(2);
+my_map = map(1 -> "test", 2 -> "yes")
+my_map.add(3, "no")
+print my_map.get(2)
 
-print my_map;
+print my_map

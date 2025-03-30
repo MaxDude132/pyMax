@@ -65,7 +65,7 @@ class ParserControl:
         self.advance()
 
         while not self.is_at_end():
-            if self.previous().type_ == TokenType.SEMICOLON:
+            if self.previous().type_ == TokenType.NEWLINE:
                 return
             
             if self.peek().type_ in (
@@ -191,7 +191,7 @@ class ExpressionsParser(ParserControl):
             if self.match(TokenType.LEFT_PAREN):
                 expression = self.finish_call(expression)
             elif self.match(TokenType.DOT):
-                name = self.consume(TokenType.IDENTIFIER, "EXpect property name after '.'.")
+                name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
                 expression = Get(expression, name)
             else:
                 break
@@ -271,6 +271,8 @@ class ExpressionsParser(ParserControl):
 class StatementsParser(ExpressionsParser):
     def declaration(self) -> Statement:
         try:
+            while self.match(TokenType.NEWLINE):
+                pass
             if self.match(TokenType.CLASS):
                 return self.class_declaration()
             if self.check(TokenType.IDENTIFIER) and (
@@ -316,7 +318,7 @@ class StatementsParser(ExpressionsParser):
         if self.match(TokenType.EQUAL):
             initializer = self.expression()
 
-        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaraction.")
+        self.consume(TokenType.NEWLINE, "Expect '\\n' after variable declaraction.")
         return VariableStatement(name, initializer)
 
     def statement(self) -> Statement:
@@ -337,16 +339,16 @@ class StatementsParser(ExpressionsParser):
     
     def print_statement(self) -> Statement:
         value = self.expression()
-        self.consume(TokenType.SEMICOLON, "Expect ';' after value.")
+        self.consume(TokenType.NEWLINE, "Expect '\\n' after value.")
         return Print(value)
     
     def return_statement(self) -> Statement:
         keyword = self.previous()
         value = None
-        if not self.check(TokenType.SEMICOLON):
+        if not self.check(TokenType.NEWLINE):
             value = self.expression()
 
-        self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
+        self.consume(TokenType.NEWLINE, "Expect '\\n' after return value.")
         return ReturnStatement(keyword, value)
     
     def for_statement(self) -> Statement:
@@ -391,7 +393,7 @@ class StatementsParser(ExpressionsParser):
     
     def expression_statement(self) -> Statement:
         expression = self.expression()
-        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        self.consume(TokenType.NEWLINE, "Expect '\\n' after expression.")
         return ExpressionStatement(expression)
     
 
