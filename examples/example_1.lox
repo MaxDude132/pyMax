@@ -1,9 +1,7 @@
-my_list = list(1, 2, 3);
-my_map = map(1 -> "test", 2 -> "does it work?");
-
-for item in my_list {
-    print item;
+class Test {
+    init: list values {
+        self.values = values;
+    }
 }
 
-print my_list;
-print my_map;
+print Test(list(1, 2, 3)).values;

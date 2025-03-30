@@ -77,7 +77,7 @@ class AstPrinter(Visitor):
         return self.parenthesize("call", expression.callee, *expression.arguments)
     
     def visit_function(self, statement, function_type="function"):
-        string = self.parenthesize(f"{function_type} {statement.name.lexeme}({', '.join(s.lexeme for s in statement.function.params)})") + "\n"
+        string = self.parenthesize(f"{function_type} {statement.name.lexeme}({', '.join(f"{s.type_.lexeme} {s.name.lexeme}" for s in statement.function.params)})") + "\n"
 
         for s in statement.function.body:
             string += s.accept(self) + "\n"

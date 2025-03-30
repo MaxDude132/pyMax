@@ -1,6 +1,7 @@
-- implement lists (basics: add, pop, iterate, next)
-- implement for-loops
-- implement magic functions iterate and next
+- implement lists (basics: add, pop, iterate, next) -- DONE
+- implement for-loops -- DONE for lists only
+- implement magic function iterate -- DONE
+- remove semicolons and replace with endline
 - implement magic functions equals and greaterThan
 - implement maps
 - implement type checking
