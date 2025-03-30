@@ -14,10 +14,15 @@ class Next(BaseInternalClass):
         return 2
     
     def init(self):
-        self.currrent = None
+        self.value = None
         self.next = None
 
     def call(self, interpreter, arguments):
-        self.current = arguments[0]
+        self.value = arguments[0]
         self.next = arguments[1]
+        return self
+    
+    def internal_set(self, value, next_node):
+        self.value = value
+        self.next = next_node
         return self

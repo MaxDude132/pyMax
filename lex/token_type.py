@@ -42,6 +42,7 @@ class TokenType(StrEnum):
     FALSE = "FALSE"
     FOR = "FOR"
     IF = "IF"
+    IN = "IN"
     LAMBDA = "LAMBDA"
     NIL = "NIL"
     OR = "OR"

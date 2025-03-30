@@ -83,7 +83,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.resolve(statement.initializer)
         self.define(statement.name)
 
-    def declare(self, name: Token):
+    def declare(self, name: Token, skip_validation: bool = False):
         if not self.scopes:
             return
         
@@ -205,3 +205,10 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.parser_error(expression.keyword, "Cannot use 'super' in a class with no superclass.")
 
         self.resolve_local(expression, expression.keyword)
+
+    def visit_for_statement(self, statement):
+        self.begin_scope()
+        self.resolve(statement.for_name)
+        self.resolve(statement.in_name)
+        self.resolve_many(statement.body)
+        self.end_scope()

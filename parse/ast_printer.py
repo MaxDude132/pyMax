@@ -114,6 +114,15 @@ class AstPrinter(Visitor):
     def visit_pair(self, expression):
         return self.parenthesize("pair", expression.left, expression.right)
     
+    def visit_for_statement(self, statement):
+        string = self.parenthesize("for", statement.for_name, statement.in_name)
+
+        for s in statement.body:
+            string += "\n" + self.parenthesize("do", s)
+            
+        string += self.parenthesize("endfor")
+        return string
+    
     def parenthesize(self, name: str, *expressions: Expression) -> str:
         string = f"({name}"
 

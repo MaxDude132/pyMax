@@ -26,17 +26,20 @@ class ListIterate(BaseInternalMethod):
     name = "iterate"
 
     def call(self, interpreter, arguments):
-        iters = []
+        first = None
         previous = None
         for value in self.instance.values:
+            current = Next(interpreter).internal_set(value, NEXT_SENTINEL)
+
             if previous is not None:
-                iters.append(Next(interpreter).call(interpreter, [previous, value]))
+                previous.next = current
 
-            previous = value
+            previous = current
 
-        iters.append(Next(interpreter).call(interpreter, [previous, NEXT_SENTINEL]))
+            if first is None:
+                first = current
 
-        return iters
+        return first
 
 
 class List(BaseInternalClass):

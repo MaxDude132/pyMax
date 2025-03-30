@@ -7,6 +7,7 @@ from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from native_functions import NATIVE_FUNCTIONS
 from native_functions.main import BaseInternalClass
+from native_functions.next import NEXT_SENTINEL
 from errors import InterpreterError
 
 
@@ -256,6 +257,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
             value = self.evaluate(statement.initializer)
 
         self.environment.define(statement.name, value)
+        return statement.name
 
     def visit_return_statement(self, statement):
         value = None
@@ -273,6 +275,21 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
             self.execute(statement.then_branch)
         elif statement.else_branch is not None:
             self.execute(statement.else_branch)
+
+    def visit_for_statement(self, statement):
+        previous = self.environment
+        self.environment = Environment(self.environment)
+        
+        for_name = self.evaluate(statement.for_name)
+        in_name = self.evaluate(statement.in_name)
+        node = in_name.internal_get_method("iterate").call(self, [])
+
+        while node is not NEXT_SENTINEL:
+            self.environment.assign(for_name, node.value)
+            self.execute_block(statement.body, self.environment)
+            node = node.next
+
+        self.environment = previous
 
     def execute_block(self, statements: list[Statement], environment: Environment):
         previous = self.environment

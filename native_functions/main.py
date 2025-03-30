@@ -53,6 +53,9 @@ class BaseInternalClass(InternalCallable):
         
         raise InterpreterError(name, f"Method '{name.lexeme}' on class '{self.name}' not found.")
     
+    def internal_get_method(self, name: str):
+        return self._methods[name]
+    
     def __str__(self) -> str:
         return f"<class {self.name}>"
     

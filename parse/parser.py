@@ -3,7 +3,7 @@ from typing import Callable
 from lex import Token
 from lex import TokenType
 from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair
-from .statements import Statement, Print, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class
+from .statements import Statement, Print, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
 from errors import ParserError
 
 
@@ -277,8 +277,6 @@ class StatementsParser(ExpressionsParser):
                 self.check_next(TokenType.LEFT_BRACE) or self.check_next(TokenType.COLON)
             ):
                 return self.function("function")
-            # if self.check(TokenType.IDENTIFIER) and not self.check_next(TokenType.LEFT_PAREN):
-            #     return self.var_declaration()
             
             return self.statement()
         except ParserError:
@@ -326,6 +324,8 @@ class StatementsParser(ExpressionsParser):
             return self.print_statement()
         if self.match(TokenType.RETURN):
             return self.return_statement()
+        if self.match(TokenType.FOR):
+            return self.for_statement()
         if self.match(TokenType.WHILE):
             return self.while_statement()
         if self.match(TokenType.LEFT_BRACE):
@@ -349,6 +349,19 @@ class StatementsParser(ExpressionsParser):
         self.consume(TokenType.SEMICOLON, "Expect ';' after return value.")
         return ReturnStatement(keyword, value)
     
+    def for_statement(self) -> Statement:
+        for_name = self.inline_var_declaration()
+        self.consume(TokenType.IN, "Expect 'in' after variable name in for-loop.")
+        in_name = self.expression()
+        self.consume(TokenType.LEFT_BRACE, "Expect '{' before for-loop body.")
+        body = self.block()
+
+        return ForStatement(for_name, in_name, body)
+    
+    def inline_var_declaration(self) -> Statement:
+        name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+        return VariableStatement(name, None)
+
     def while_statement(self) -> Statement:
         condition = self.expression()
         body = self.statement()

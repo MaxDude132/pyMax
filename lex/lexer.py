@@ -24,6 +24,7 @@ KEYWORDS = {
     "false": TokenType.FALSE,
     "for": TokenType.FOR,
     "if": TokenType.IF,
+    "in": TokenType.IN,
     "lambda": TokenType.LAMBDA,
     "nil": TokenType.NIL,
     "or": TokenType.OR,
