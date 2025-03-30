@@ -95,6 +95,7 @@ class WhileStatement(Statement):
 
 @dataclass
 class ForStatement(Statement):
+    keyword: Token
     for_name: Variable
     in_name: Variable
     body: list[Statement]

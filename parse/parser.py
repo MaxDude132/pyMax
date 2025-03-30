@@ -369,13 +369,14 @@ class StatementsParser(ExpressionsParser):
         return ReturnStatement(keyword, value)
     
     def for_statement(self) -> Statement:
+        keyword = self.previous()
         for_name = self.inline_var_declaration()
         self.consume(TokenType.IN, "Expect 'in' after variable name in for-loop.")
         in_name = self.expression()
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before for-loop body.")
         body = self.block()
 
-        return ForStatement(for_name, in_name, body)
+        return ForStatement(keyword, for_name, in_name, body)
     
     def inline_var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -412,7 +413,6 @@ class StatementsParser(ExpressionsParser):
     
     def expression_statement(self) -> Statement:
         expression = self.expression()
-        # self.consume(TokenType.NEWLINE, "Expect '\\n' after expression.")
         return ExpressionStatement(expression)
     
 

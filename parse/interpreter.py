@@ -99,7 +99,9 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         if isinstance(obj, InstanceCallable):
             return obj.get(expression.name)
         if isinstance(obj, BaseInternalClass):
-            return obj.get_method(expression.name)
+            return obj.find_method(expression.name)
+        
+        print(expression)
         
         raise InterpreterError(expression.name, "Only instances have properties.")
     
@@ -278,9 +280,13 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         
         for_name = self.evaluate(statement.for_name)
         in_name = self.evaluate(statement.in_name)
-        node = in_name.internal_get_method("iterate").call(self, [])
+        try:
+            node = in_name.internal_find_method("iterate").call(self, [])
+        except InternalError:
+            raise InterpreterError(statement.keyword, "Cannot iterate over instance of class that does not implement 'iterate'.")
 
         while node is not NEXT_SENTINEL:
+            print(node)
             self.environment.assign(for_name, node.value)
             self.execute_block(statement.body, self.environment)
             node = node.next

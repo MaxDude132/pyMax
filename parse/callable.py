@@ -1,10 +1,10 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from .expressions import Lambda, Parameter
+from .expressions import Lambda
 from .environment import Environment
 from lex import Token, TokenType
-from errors import InterpreterError
+from errors import InterpreterError, InternalError
 
 if TYPE_CHECKING:
     from .interpreter import Interpreter
@@ -131,6 +131,12 @@ class ClassCallable(InternalCallable):
             value = superclass.find_method(name, check_supers=False, errored=errored)
             if value is not None:
                 return value
+    
+    def internal_find_method(self, name: str):
+        try:
+            return self.methods[name]
+        except KeyError:
+            raise InternalError()
 
     def __str__(self) -> str:
         return f"<class {self.name.lexeme}>"
@@ -150,6 +156,12 @@ class InstanceCallable(InternalCallable):
             return method.bind(self)
         
         raise InterpreterError(name, f"Undefined property '{name.lexeme}'.")
+    
+    def internal_find_method(self, name: str):
+        try:
+            return self.klass.internal_find_method(name).bind(self)
+        except KeyError:
+            raise InternalError()
     
     def set(self, name: Token, value: Any):
         self.fields[name.lexeme] = value

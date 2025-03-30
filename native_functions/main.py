@@ -47,7 +47,7 @@ class BaseInternalClass(InternalCallable):
     def lower_arity(self):
         return 0
     
-    def get_method(self, name: Token):
+    def find_method(self, name: Token):
         if name.lexeme not in self._fields:
             raise InterpreterError(name, f"Field '{name.lexeme}' on class '{self.name}' not found.")
         
@@ -57,7 +57,7 @@ class BaseInternalClass(InternalCallable):
 
         return ret
     
-    def internal_get_method(self, name: str):
+    def internal_find_method(self, name: str):
         return self._fields[name]
     
     def __str__(self) -> str:

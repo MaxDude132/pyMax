@@ -4,6 +4,7 @@
 - remove semicolons and replace with endline -- DONE
 - make float and int separate types -- DONE
 - implement maps (basics: add, get, remove, iterate) -- DONE
+- allow classes implementing their own iterate method -- DONE
 - implement magic functions equals and greaterThan
 - implement type checking
 - look into implementing async syntax
