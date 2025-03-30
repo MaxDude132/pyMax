@@ -157,13 +157,17 @@ class Lexer:
         while self.peek().isdigit():
             self.advance()
 
+        token_type = TokenType.INT
         if self.peek() == '.' and self.peek_next().isdigit():
+            token_type = TokenType.FLOAT
             self.advance()
             while self.peek().isdigit():
                 self.advance()
+            value = float(self.source[self.start:self.current])
+        else:
+            value = int(self.source[self.start:self.current])
 
-        value = float(self.source[self.start:self.current])
-        self.add_token(TokenType.NUMBER, value)
+        self.add_token(token_type, value)
 
     def identifier(self):
         while self.peek().isalnum() or self.peek() in "_":

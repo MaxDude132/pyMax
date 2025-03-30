@@ -213,7 +213,7 @@ class ExpressionsParser(ParserControl):
                 method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
             return Super(keyword, method)
         
-        if self.match(TokenType.NUMBER, TokenType.STRING):
+        if self.match(TokenType.FLOAT, TokenType.STRING, TokenType.INT):
             return Literal(self.previous().literal)
         
         if self.match(TokenType.SELF):

@@ -6,3 +6,5 @@ my_map.add(3, "no")
 print my_map.get(2)
 
 print my_map
+
+print 1 == 1.0

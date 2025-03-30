@@ -1,8 +1,8 @@
 - implement lists (basics: add, pop, iterate, next) -- DONE
 - implement for-loops -- DONE for lists only
 - implement magic function iterate -- DONE
-- remove semicolons and replace with endline
-- make float and int separate types
+- remove semicolons and replace with endline -- DONE
+- make float and int separate types -- DONE
 - implement magic functions equals and greaterThan
 - implement maps
 - implement type checking

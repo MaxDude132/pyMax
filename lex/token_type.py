@@ -34,7 +34,8 @@ class TokenType(StrEnum):
     # Literals
     IDENTIFIER = "IDENTIFIER"
     STRING = "STRING"
-    NUMBER = "NUMBER"
+    INT = "INT"
+    FLOAT = "FLOAT"
     
     # Keywords
     AND = "AND"
