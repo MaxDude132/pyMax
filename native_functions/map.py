@@ -1,10 +1,41 @@
 from typing import Any
 
-from .main import BaseInternalClass
+from .main import BaseInternalClass, BaseInternalMethod
+
+
+class MapAdd(BaseInternalMethod):
+    name = "add"
+
+    def lower_arity(self):
+        return 2
+    
+    def upper_arity(self):
+        return 2
+    
+    def call(self, interpreter, arguments):
+        self.instance.values[arguments[0]] = arguments[1]
+
+
+class MapGet(BaseInternalMethod):
+    name = "get"
+
+    def lower_arity(self):
+        return 1
+    
+    def upper_arity(self):
+        return 1
+    
+    def call(self, interpreter, arguments):
+        return self.instance.values[arguments[0]]
 
 
 class Map(BaseInternalClass):
     name = "map"
+
+    METHODS = (
+        MapAdd,
+        MapGet,
+    )
 
     def init(self):
         self.values = {}
