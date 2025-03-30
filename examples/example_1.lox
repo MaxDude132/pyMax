@@ -1,10 +1,17 @@
-my_list = list(1, 2, 3)
-print my_list.get(0)
+--my_list = list(1, 2, 3)
+--print my_list.get(0)
+
+--my_map = map(1 -> "test", 2 -> "yes")
+--my_map.add(3, "no")
+--print my_map.get(2)
+--print my_map.remove(1)
+--print my_map.get(2)
+--my_map.add(pair(4, "with a pair now yall"))
+--print my_map
+
+my_pair = pair(1, "test")
+my_pair(2, "test2")
+print(my_pair)
 
 my_map = map(1 -> "test", 2 -> "yes")
-my_map.add(3, "no")
-print my_map.get(2)
-
-print my_map
-
-print 1 == 1.0
+for item in my_map { print(item) }

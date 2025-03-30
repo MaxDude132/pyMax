@@ -29,14 +29,14 @@ class BaseInternalFunction(InternalCallable):
 
 class BaseInternalClass(InternalCallable):
     name = ""
-    METHODS = []
+    FIELDS = []
 
     def __init__(self, interpreter: Interpreter):
         self.interpreter = interpreter
         if hasattr(self, "init"):
             self.init()
 
-        self._methods = {m.name: m(self) for m in self.METHODS}
+        self._fields = {m.name: m(self) for m in self.FIELDS}
 
     def check_arity(self, arg_count):
         return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
@@ -48,17 +48,21 @@ class BaseInternalClass(InternalCallable):
         return 0
     
     def get_method(self, name: Token):
-        if name.lexeme in self._methods:
-            return self._methods[name.lexeme]
+        if name.lexeme not in self._fields:
+            raise InterpreterError(name, f"Field '{name.lexeme}' on class '{self.name}' not found.")
         
-        raise InterpreterError(name, f"Method '{name.lexeme}' on class '{self.name}' not found.")
+        ret = self._fields[name.lexeme]
+        if isinstance(ret, BaseInternalAttribute):
+            ret = ret.call(self.interpreter, [])
+
+        return ret
     
     def internal_get_method(self, name: str):
-        return self._methods[name]
+        return self._fields[name]
     
     def __str__(self) -> str:
         return f"<class {self.name}>"
-    
+
 
 class BaseInternalMethod(InternalCallable):
     name = ""
@@ -68,3 +72,13 @@ class BaseInternalMethod(InternalCallable):
 
     def __str__(self):
         return f"<method '{self.name}' of class '{self.instance.name}'>"
+    
+
+class BaseInternalAttribute(InternalCallable):
+    name = ""
+
+    def __init__(self, instance: BaseInternalClass):
+        self.instance = instance
+
+    def __str__(self):
+        return f"<attribute '{self.name}' of class '{self.instance.name}'>"

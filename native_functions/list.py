@@ -45,7 +45,7 @@ class ListIterate(BaseInternalMethod):
 class List(BaseInternalClass):
     name = "list"
 
-    METHODS = [
+    FIELDS = [
         ListAdd,
         ListGet,
         ListPop,

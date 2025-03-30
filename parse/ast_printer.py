@@ -37,9 +37,6 @@ class AstPrinter(Visitor):
     def visit_expression_statement(self, statement):
         return statement.expression.accept(self)
     
-    def visit_print(self, statement):
-        return self.parenthesize("print", statement.expression)
-    
     def visit_block(self, statement):
         string = self.parenthesize("block") + "\n"
 

@@ -48,7 +48,6 @@ class TokenType(StrEnum):
     LAMBDA = "LAMBDA"
     NIL = "NIL"
     OR = "OR"
-    PRINT = "PRINT"
     RETURN = "RETURN"
     SELF = "SELF"
     SUPER = "SUPER"

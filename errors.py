@@ -10,3 +10,7 @@ class InterpreterError(Exception):
         super().__init__(message)
         self.token = token
         self.message = message
+
+
+class InternalError(Exception):
+    pass

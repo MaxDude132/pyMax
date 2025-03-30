@@ -12,9 +12,6 @@ class StatementVisitor:
     def visit_function(self, statement: Function):
         pass
 
-    def visit_print(self, statement: Print):
-        pass
-
     def visit_variable_statement(self, statement: VariableStatement):
         pass
 
@@ -46,11 +43,6 @@ class Statement:
         ).lstrip('_')
         func = getattr(visitor, f'visit_{class_name}')
         return func(self)
-    
-
-@dataclass
-class Print(Statement):
-    expression: Expression
 
 
 @dataclass

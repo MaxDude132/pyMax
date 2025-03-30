@@ -8,7 +8,7 @@ from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from native_functions import NATIVE_FUNCTIONS
 from native_functions.main import BaseInternalClass
 from native_functions.next import NEXT_SENTINEL
-from errors import InterpreterError
+from errors import InterpreterError, InternalError
 
 
 class InterpreterBase:
@@ -88,7 +88,11 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         if not callee.check_arity(len(arguments)):
             raise InterpreterError(expression.paren, f"Expected between {callee.lower_arity()} and {callee.upper_arity()} arguments but got {len(arguments)}.")
 
-        return callee.call(self, arguments)
+        try:
+            return callee.call(self, arguments)
+        except InternalError as e:
+            raise InterpreterError(expression.paren, str(e))
+
     
     def visit_get(self, expression):
         obj = self.evaluate(expression.obj)
@@ -198,7 +202,10 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         if obj is None:
             return "nil"
         
-        return f'"{str(obj)}"' if keep_string_quotes else str(obj) 
+        if isinstance(obj, str):
+            return f'"{obj}"' if keep_string_quotes else obj
+        
+        return str(obj)
 
 
 class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
@@ -208,10 +215,6 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
     def visit_function(self, statement):
         function = FunctionCallable(statement.name, statement.function, self.environment)
         self.environment.define(statement.name, function)
-
-    def visit_print(self, statement):
-        value = self.evaluate(statement.expression)
-        print(self.stringify(value))
 
     def visit_block(self, statement):
         self.execute_block(statement.statements, Environment(self.environment))

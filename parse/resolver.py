@@ -132,9 +132,6 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         if statement.else_branch is not None:
             self.resolve(statement.else_branch)
 
-    def visit_print(self, statement):
-        self.resolve(statement.expression)
-
     def visit_return_statement(self, statement):
         if self.current_function == FunctionType.NONE:
             self.parser_error(

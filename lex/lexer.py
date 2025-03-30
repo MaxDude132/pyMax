@@ -28,7 +28,6 @@ KEYWORDS = {
     "lambda": TokenType.LAMBDA,
     "nil": TokenType.NIL,
     "or": TokenType.OR,
-    "print": TokenType.PRINT,
     "return": TokenType.RETURN,
     "self": TokenType.SELF,
     "super": TokenType.SUPER,

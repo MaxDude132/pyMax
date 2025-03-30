@@ -3,7 +3,7 @@ from typing import Callable
 from lex import Token
 from lex import TokenType
 from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair
-from .statements import Statement, Print, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
+from .statements import Statement, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
 from errors import ParserError
 
 
@@ -46,7 +46,12 @@ class ParserControl:
         return self.tokens[self.current]
     
     def peek_next(self) -> Token:
-        return self.tokens[self.current+1]
+        i = 1
+        while True:
+            token = self.tokens[self.current+i]
+            if token.type_ is not TokenType.NEWLINE:
+                return token
+            i += 1
 
     def previous(self) -> Token:
         return self.tokens[self.current-1]
@@ -60,6 +65,10 @@ class ParserControl:
     def error(self, token: Token, message: str):
         self.error_callback(token, message)
         return ParserError(message)
+    
+    def skip_newlines(self):
+        while self.match(TokenType.NEWLINE):
+            pass
     
     def synchronize(self):
         self.advance()
@@ -75,7 +84,6 @@ class ParserControl:
                 TokenType.FOR,
                 TokenType.IF,
                 TokenType.WHILE,
-                TokenType.PRINT,
                 TokenType.RETURN,
             ):
                 return
@@ -85,6 +93,7 @@ class ParserControl:
 
 class ExpressionsParser(ParserControl):
     def expression(self) -> Expression:
+        self.skip_newlines()
         return self.assignment()
     
     def assignment(self) -> Expression:
@@ -92,6 +101,7 @@ class ExpressionsParser(ParserControl):
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
+            self.skip_newlines()
             value = self.assignment()
 
             if isinstance(expression, Variable):
@@ -226,7 +236,9 @@ class ExpressionsParser(ParserControl):
             return Variable(self.previous())
         
         if self.match(TokenType.LEFT_PAREN):
+            self.skip_newlines()
             expression = self.expression()
+            self.skip_newlines()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expression)
         
@@ -235,21 +247,28 @@ class ExpressionsParser(ParserControl):
     def finish_call(self, expression: Expression):
         arguments: list[Expression] = []
 
+        self.skip_newlines()
         if not self.check(TokenType.RIGHT_PAREN):
             while True:
+                self.skip_newlines()
                 arguments.append(self.expression())
-                if not self.match(TokenType.COMMA):
+                self.skip_newlines()
+                if not self.match(TokenType.COMMA) or self.check(TokenType.RIGHT_PAREN):
                     break
 
+        self.skip_newlines()
         paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
         return Call(expression, paren, arguments)
     
     def function_body(self, kind: str):
         parameters: list[Parameter] = []
+        self.skip_newlines()
         if self.match(TokenType.COLON):
             has_had_default = False
             while True:
+                self.skip_newlines()
                 type_ = self.consume(TokenType.IDENTIFIER, "Expect type.")
+                self.skip_newlines()
                 name = self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
                 default = None
                 if self.match(TokenType.EQUAL):
@@ -260,9 +279,11 @@ class ExpressionsParser(ParserControl):
                     raise self.error(name, "Cannot set a parameter without a default value after a parameter with a default value.")
 
                 parameters.append(Parameter(type_, name, default))
-                if not self.match(TokenType.COMMA):
+                self.skip_newlines()
+                if not self.match(TokenType.COMMA) or self.check_next(TokenType.LEFT_BRACE):
                     break
 
+        self.skip_newlines()
         self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
         body = self.block()
         return Lambda(parameters, body)
@@ -271,8 +292,6 @@ class ExpressionsParser(ParserControl):
 class StatementsParser(ExpressionsParser):
     def declaration(self) -> Statement:
         try:
-            while self.match(TokenType.NEWLINE):
-                pass
             if self.match(TokenType.CLASS):
                 return self.class_declaration()
             if self.check(TokenType.IDENTIFIER) and (
@@ -297,17 +316,22 @@ class StatementsParser(ExpressionsParser):
                 if not self.match(TokenType.COMMA):
                     break
 
+        self.skip_newlines()
         self.consume(TokenType.LEFT_BRACE, "Expect '{' before class body.")
+        self.skip_newlines()
 
         methods: list[Function] = []
         while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
             methods.append(self.function("method"))
+            self.skip_newlines()
 
+        self.skip_newlines()
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after class body.")
 
         return Class(name, superclasses, methods)
 
     def function(self, kind: str) -> Function:
+        self.skip_newlines()
         name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
         return Function(name, self.function_body(kind))
 
@@ -322,8 +346,6 @@ class StatementsParser(ExpressionsParser):
         return VariableStatement(name, initializer)
 
     def statement(self) -> Statement:
-        if self.match(TokenType.PRINT):
-            return self.print_statement()
         if self.match(TokenType.RETURN):
             return self.return_statement()
         if self.match(TokenType.FOR):
@@ -336,11 +358,6 @@ class StatementsParser(ExpressionsParser):
             return self.if_statement()
         
         return self.expression_statement()
-    
-    def print_statement(self) -> Statement:
-        value = self.expression()
-        self.consume(TokenType.NEWLINE, "Expect '\\n' after value.")
-        return Print(value)
     
     def return_statement(self) -> Statement:
         keyword = self.previous()
@@ -374,6 +391,8 @@ class StatementsParser(ExpressionsParser):
         statements: list[Statement] = []
 
         while not self.check(TokenType.RIGHT_BRACE) and not self.is_at_end():
+            if self.match(TokenType.NEWLINE):
+                continue
             statements.append(self.declaration())
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
@@ -393,7 +412,7 @@ class StatementsParser(ExpressionsParser):
     
     def expression_statement(self) -> Statement:
         expression = self.expression()
-        self.consume(TokenType.NEWLINE, "Expect '\\n' after expression.")
+        # self.consume(TokenType.NEWLINE, "Expect '\\n' after expression.")
         return ExpressionStatement(expression)
     
 
@@ -402,6 +421,7 @@ class Parser(StatementsParser):
         statements: list[Statement] = []
         while not self.is_at_end():
             statements.append(self.declaration())
+            self.skip_newlines()
             
         return statements
         

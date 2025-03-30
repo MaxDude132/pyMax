@@ -1,9 +1,9 @@
-- implement lists (basics: add, pop, iterate, next) -- DONE
+- implement lists (basics: add, pop, iterate) -- DONE
 - implement for-loops -- DONE for lists only
 - implement magic function iterate -- DONE
 - remove semicolons and replace with endline -- DONE
 - make float and int separate types -- DONE
+- implement maps (basics: add, get, remove, iterate) -- DONE
 - implement magic functions equals and greaterThan
-- implement maps
 - implement type checking
 - look into implementing async syntax
