@@ -26,7 +26,7 @@ KEYWORDS = {
     "if": TokenType.IF,
     "in": TokenType.IN,
     "lambda": TokenType.LAMBDA,
-    "nil": TokenType.NIL,
+    "null": TokenType.NULL,
     "or": TokenType.OR,
     "return": TokenType.RETURN,
     "self": TokenType.SELF,
@@ -101,8 +101,12 @@ class Lexer:
                     while self.peek() != '\n' and not self.is_at_end():
                         self.advance()
                 elif self.match('*'):
-                    while not (self.peek() != '*' and self.peek_next() != '-') and not self.is_at_end():
+                    while not (self.peek() == '*' and self.peek_next() == '-') and not self.is_at_end():
+                        if self.peek() == '\n':
+                            self.line += 1
                         self.advance()
+                    self.advance()
+                    self.advance()
                 elif self.match('>'):
                     self.add_token(TokenType.RIGHT_ARROW)
                 else:

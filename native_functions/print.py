@@ -8,4 +8,7 @@ class Print(BaseInternalFunction):
         return float("inf")
     
     def call(self, interpreter, arguments):
-        print(*arguments)
+        stringified = []
+        for argument in arguments:
+            stringified.append(interpreter.stringify(argument))
+        print(*stringified)

@@ -213,7 +213,7 @@ class ExpressionsParser(ParserControl):
             return Literal(False)
         if self.match(TokenType.TRUE):
             return Literal(True)
-        if self.match(TokenType.NIL):
+        if self.match(TokenType.NULL):
             return Literal(None)
         
         if self.match(TokenType.SUPER):
@@ -400,6 +400,7 @@ class StatementsParser(ExpressionsParser):
         return statements
     
     def if_statement(self) -> Statement:
+        keyword = self.previous()
         condition = self.expression()
 
         then_branch = self.statement()
@@ -408,7 +409,7 @@ class StatementsParser(ExpressionsParser):
             else_branch = self.statement()
 
         return IfStatement(
-            condition, then_branch, else_branch
+            condition, then_branch, else_branch, keyword
         )
     
     def expression_statement(self) -> Statement:
@@ -420,6 +421,7 @@ class Parser(StatementsParser):
     def parse(self) -> list[Statement]:
         statements: list[Statement] = []
         while not self.is_at_end():
+            self.skip_newlines()
             statements.append(self.declaration())
             self.skip_newlines()
             

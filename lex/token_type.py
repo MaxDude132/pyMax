@@ -46,7 +46,7 @@ class TokenType(StrEnum):
     IF = "IF"
     IN = "IN"
     LAMBDA = "LAMBDA"
-    NIL = "NIL"
+    NULL = "NULL"
     OR = "OR"
     RETURN = "RETURN"
     SELF = "SELF"

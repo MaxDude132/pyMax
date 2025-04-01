@@ -1,6 +1,7 @@
 from .expressions import Expression
 from .statements import Statement
 from .visitor import Visitor
+from native_functions.BaseTypes.Pair import PairClass
 
 
 class AstPrinter(Visitor):
@@ -109,7 +110,7 @@ class AstPrinter(Visitor):
         return self.parenthesize(f"super {expression.method.lexeme}")
     
     def visit_pair(self, expression):
-        return self.parenthesize("pair", expression.left, expression.right)
+        return self.parenthesize(PairClass.name, expression.left, expression.right)
     
     def visit_for_statement(self, statement):
         string = self.parenthesize("for", statement.for_name, statement.in_name)

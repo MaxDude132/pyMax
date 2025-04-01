@@ -1,6 +1,11 @@
+-*
 class IteratorTest {
-    init: list values {
+    init: List values = List() {
         self.values = values
+    }
+
+    add: IteratorTest other {
+        self.values.extend(other.values)
     }
 
     iterate {
@@ -8,9 +13,16 @@ class IteratorTest {
     }
 }
 
-lst = list(1, 2, 3)
-test = IteratorTest(lst)
+list = List()
+list.extend(List(1, 2))
+print(list)
 
-for item in test {
-    print item
+test = IteratorTest(List(1))
+test2 = IteratorTest(List(2, 3))
+test3 = test + test2
+print(test3.values)
+
+for item in test3 {
+    print(item)
 }
+*-

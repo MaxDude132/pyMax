@@ -61,6 +61,7 @@ class IfStatement(Statement):
     condition: Expression
     then_branch: Statement
     else_branch: Statement
+    keyword: Token
 
 
 @dataclass

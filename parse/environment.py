@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 from lex import Token
-from errors import InterpreterError
+from errors import InterpreterError, InternalError
 
 
 VARIABLE_VALUE_SENTINEL = object()
@@ -22,6 +22,15 @@ class Environment:
             return self.enclosing.get(name)
         
         raise InterpreterError(name, f"Undefined variable '{name.lexeme}'.")
+    
+    def internal_get(self, name: str):
+        if name in self.values:
+            return self.values[name]
+        
+        if self.enclosing is not None:
+            return self.enclosing.internal_get(name)
+        
+        raise InternalError(f"Undefined variable '{name}'")
     
     def get_at(self, distance: int, name: str):
         return self.ancestor(distance).values.get(name)

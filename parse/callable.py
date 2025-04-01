@@ -44,6 +44,10 @@ class FunctionCallable(InternalCallable):
         self.class_instance = class_instance
 
     def call(self, interpreter: "Interpreter", arguments: list[Any]):
+        for i, param in enumerate(self.declaration.params):
+            if i >= len(arguments):
+                arguments.append(interpreter.evaluate(param.default))
+
         environment = Environment(self.closure)
         for i, argument in enumerate(arguments):
             environment.define(self.declaration.params[i].name, argument)
@@ -75,6 +79,11 @@ class FunctionCallable(InternalCallable):
     def return_self(self) -> Any | None:
         if self.class_instance is not None:
             return self.closure.get_at(0, "self")
+    
+    @property
+    def class_name(self):
+        if self.class_instance:
+            return self.class_instance.class_name
 
     def __str__(self) -> str:
         if self.name is not None:
@@ -136,7 +145,11 @@ class ClassCallable(InternalCallable):
         try:
             return self.methods[name]
         except KeyError:
-            raise InternalError()
+            raise InternalError(f"Could not find method {name} on class {self.name.lexeme}.")
+    
+    @property
+    def class_name(self):
+        return self.name.lexeme
 
     def __str__(self) -> str:
         return f"<class {self.name.lexeme}>"
@@ -161,10 +174,14 @@ class InstanceCallable(InternalCallable):
         try:
             return self.klass.internal_find_method(name).bind(self)
         except KeyError:
-            raise InternalError()
+            raise InternalError(f"Could not find method {name} on class {self.class_name.lexeme}.")
     
     def set(self, name: Token, value: Any):
         self.fields[name.lexeme] = value
+    
+    @property
+    def class_name(self):
+        return self.klass.name.lexeme
 
     def __str__(self) -> str:
-        return f"<instanceof {self.klass.name}>"
+        return f"<{self.class_name}>"

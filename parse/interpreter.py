@@ -2,12 +2,17 @@ from typing import Any, Callable
 
 from lex import TokenType, Token
 from .callable import InternalCallable, FunctionCallable, Return, ClassCallable, InstanceCallable
-from .expressions import ExpressionVisitor, Expression
+from .expressions import ExpressionVisitor, Expression, Binary
 from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from native_functions import NATIVE_FUNCTIONS
-from native_functions.main import BaseInternalClass
+from native_functions.main import BaseInternalInstance
 from native_functions.next import NEXT_SENTINEL
+from native_functions.BaseTypes.Pair import PairInstance, PairClass
+from native_functions.BaseTypes.Int import IntInstance, IntClass
+from native_functions.BaseTypes.Float import FloatInstance, FloatClass
+from native_functions.BaseTypes.String import StringInstance, StringClass
+from native_functions.BaseTypes.Bool import BoolInstance, BoolClass
 from errors import InterpreterError, InternalError
 
 
@@ -36,42 +41,41 @@ class InterpreterBase:
 
 class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     def visit_binary(self, expression):
+        match expression.operator.type_:
+            case TokenType.GREATER:
+                return self.binary_operation(expression, "greaterThan")
+            case TokenType.GREATER_EQUAL:
+                return self.binary_operation(expression, "greaterThan") or self.binary_operation(expression, "equals")
+            case TokenType.LESS:
+                return not self.binary_operation(expression, "greaterThan") and not self.binary_operation(expression, "equals")
+            case TokenType.LESS_EQUAL:
+                return not self.binary_operation(expression, "greaterThan")
+            case TokenType.BANG_EQUAL:
+                return not self.binary_operation(expression, "equals")
+            case TokenType.EQUAL_EQUAL:
+                return self.binary_operation(expression, "equals")
+            case TokenType.MINUS:
+                return self.binary_operation(expression, "substract")
+            case TokenType.PLUS:
+                return self.binary_operation(expression, "add")
+            case TokenType.SLASH:
+                return self.binary_operation(expression, "divide")
+            case TokenType.STAR:
+                return self.binary_operation(expression, "multiply")
+            
+        return None
+    
+    def binary_operation(self, expression: Binary, method_name: str):
         left = self.evaluate(expression.left)
         right = self.evaluate(expression.right)
 
-        match expression.operator.type_:
-            case TokenType.GREATER:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) > float(right)
-            case TokenType.GREATER_EQUAL:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) >= float(right)
-            case TokenType.LESS:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) < float(right)
-            case TokenType.LESS_EQUAL:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) <= float(right)
-            case TokenType.BANG_EQUAL:
-                return left != right
-            case TokenType.EQUAL_EQUAL:
-                return left == right
-            case TokenType.MINUS:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) - float(right)
-            case TokenType.PLUS:
-                try:
-                    return left + right
-                except TypeError:
-                    raise InterpreterError(expression.operator, "Operands must be two numbers or two strings.")
-            case TokenType.SLASH:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) / float(right)
-            case TokenType.STAR:
-                self.check_number_operands(expression.operator, left, right)
-                return float(left) * float(right)
-            
-        return None
+        try:
+            method = left.internal_find_method(method_name)
+            value = self.call(expression.operator, method, [right])
+            return value
+        except (KeyError, AttributeError):
+            raise InterpreterError(expression.operator, f"{left.class_name} does not implement the {method_name} method.")
+
     
     def visit_call(self, expression):
         callee = self.evaluate(expression.callee)
@@ -80,32 +84,48 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         for argument in expression.arguments:
             arguments.append(self.evaluate(argument))
 
-        if not isinstance(callee, InternalCallable):
-            raise InterpreterError(expression.paren, "Can only call functions and classes.")
+        return self.call(expression.paren, callee, arguments)
         
-        self.current_call = callee
+    def call(self, token: Token, function: InternalCallable, arguments: list[Any]):
+        if not isinstance(function, InternalCallable):
+            raise InterpreterError(token, "Can only call functions and classes.")
         
-        if not callee.check_arity(len(arguments)):
-            raise InterpreterError(expression.paren, f"Expected between {callee.lower_arity()} and {callee.upper_arity()} arguments but got {len(arguments)}.")
+        self.current_call = function
+        
+        if not function.check_arity(len(arguments)):
+            raise InterpreterError(token, f"Expected between {function.lower_arity()} and {function.upper_arity()} arguments but got {len(arguments)}.")
 
         try:
-            return callee.call(self, arguments)
+            return function.call(self, arguments)
         except InternalError as e:
-            raise InterpreterError(expression.paren, str(e))
-
+            raise InterpreterError(token, str(e))
     
     def visit_get(self, expression):
         obj = self.evaluate(expression.obj)
         if isinstance(obj, InstanceCallable):
             return obj.get(expression.name)
-        if isinstance(obj, BaseInternalClass):
+        if isinstance(obj, BaseInternalInstance):
             return obj.find_method(expression.name)
-        
-        print(expression)
-        
+
         raise InterpreterError(expression.name, "Only instances have properties.")
     
     def visit_literal(self, expression):
+        if isinstance(expression.value, bool):
+            klass = self.environment.internal_get(BoolClass.name)
+            return BoolInstance(klass, expression.value)
+        
+        if isinstance(expression.value, int):
+            klass = self.environment.internal_get(IntClass.name)
+            return IntInstance(klass, expression.value)
+        
+        if isinstance(expression.value, float):
+            klass = self.environment.internal_get(FloatClass.name)
+            return FloatInstance(klass, expression.value)
+        
+        if isinstance(expression.value, str):
+            klass = self.environment.internal_get(StringClass.name)
+            return StringInstance(klass, expression.value)
+
         return expression.value
     
     def visit_grouping(self, expression):
@@ -113,12 +133,13 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     
     def visit_logical(self, expression):
         left = self.evaluate(expression.left)
+        isTrue = self.unary_operation(expression.operator, expression.left, "isTrue")
 
         if expression.operator.type_ == TokenType.OR:
-            if left:
+            if isTrue:
                 return left
         else:
-            if not left:
+            if not isTrue:
                 return left
             
         return self.evaluate(expression.right)
@@ -148,16 +169,23 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return self.look_up_variable(expression.keyword, expression)
     
     def visit_unary(self, expression):
-        right = self.evaluate(expression.right)
-
         match expression.operator.type_:
             case TokenType.BANG:
-                return not right
+                return self.unary_operation(expression.operator, expression.right, "isNotTrue", "isTrue")
             case TokenType.MINUS:
-                self.check_number_operand(expression.operator, right)
-                return -float(right)
+                return self.unary_operation(expression.operator, expression.right, "negate")
             
         return None
+    
+    def unary_operation(self, token: Token, obj: Expression, method_name: str, error_method_name: str | None = None):
+        right = self.evaluate(obj)
+
+        try:
+            method = right.internal_find_method(method_name)
+            value = self.call(token, method, [])
+            return value
+        except KeyError:
+            raise InterpreterError(token, f"class {right.class_name} does not implement the {error_method_name or method_name} method.")
     
     def visit_variable(self, expression):
         return self.look_up_variable(expression.name, expression)
@@ -183,7 +211,8 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return FunctionCallable(None, expression, self.environment)
     
     def visit_pair(self, expression):
-        return (self.evaluate(expression.left), self.evaluate(expression.right))
+        klass = self.environment.internal_get(PairClass.name)
+        return PairInstance(klass, self.evaluate(expression.left), self.evaluate(expression.right))
     
     def evaluate(self, expression: Expression):
         return expression.accept(self)
@@ -194,18 +223,18 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         
         raise InterpreterError(operator, "Operand must be a number.")
     
-    def check_number_operands(self, operator: Token, left: Any, right: Any):
-        if isinstance(left, float) and isinstance(right, float):
-            return
-        
-        raise InterpreterError(operator, "Operands must be a number.")
-    
     def stringify(self, obj: Any, keep_string_quotes: bool = False):
         if obj is None:
             return "nil"
         
         if isinstance(obj, str):
             return f'"{obj}"' if keep_string_quotes else obj
+        
+        if isinstance(obj, InternalCallable):
+            try:
+                return obj.internal_find_method("toString").call(self, []).value
+            except (InternalError, KeyError, AttributeError):
+                pass
         
         return str(obj)
 
@@ -242,7 +271,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
             function = FunctionCallable(method.name, method.function, self.environment)
             methods[method.name.lexeme] = function
 
-        klass = ClassCallable(statement.name.lexeme, superclasses, methods)
+        klass = ClassCallable(statement.name, superclasses, methods)
 
         for superclass in statement.superclasses:
             self.environment = self.environment.enclosing
@@ -269,7 +298,15 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
             self.execute(statement.body)
 
     def visit_if_statement(self, statement):
-        if self.evaluate(statement.condition):
+        isTrue = self.evaluate(statement.condition)
+
+        if not isinstance(isTrue, BoolInstance):
+            try:
+                isTrue = isTrue.internal_find_method("isTrue").call(self, [])
+            except KeyError:
+                raise InterpreterError(statement.keyword, f"class {isTrue.class_name} does not implement the isTrue method.")
+        
+        if isTrue.value:
             self.execute(statement.then_branch)
         elif statement.else_branch is not None:
             self.execute(statement.else_branch)
@@ -285,11 +322,10 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         except InternalError:
             raise InterpreterError(statement.keyword, "Cannot iterate over instance of class that does not implement 'iterate'.")
 
-        while node is not NEXT_SENTINEL:
-            print(node)
+        while node.value is not NEXT_SENTINEL:
             self.environment.assign(for_name, node.value)
             self.execute_block(statement.body, self.environment)
-            node = node.next
+            node = node.next_node
 
         self.environment = previous
 
