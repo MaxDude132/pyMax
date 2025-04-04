@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import Any
 
-from lex import Token
-from errors import InterpreterError, InternalError
+from maxlang.lex import Token
+from maxlang.errors import InterpreterError, InternalError
 
 
 VARIABLE_VALUE_SENTINEL = object()

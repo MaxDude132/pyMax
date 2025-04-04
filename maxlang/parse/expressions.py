@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, TYPE_CHECKING
 
-from lex.lexer import Token
+from maxlang.lex.lexer import Token
 
 if TYPE_CHECKING:
     from .statements import Statement

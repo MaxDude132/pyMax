@@ -1,20 +1,19 @@
 import sys
 
-from lex import Lexer, Token, TokenType
-from parse import Parser, AstPrinter, Interpreter, Resolver
-from errors import InterpreterError
+from .lex import Lexer, Token, TokenType
+from .parse import Parser, AstPrinter, Interpreter, Resolver
+from .errors import InterpreterError
 
-class Lox:
+class Max:
     had_error: bool
 
-    def __init__(self, script: str | None):
+    def __init__(self, show_ast=False):
+        self.show_ast = show_ast
         self.had_error = False
         self.had_runtime_error = False
 
-        if script:
-            self.run_file(script)
-        else:
-            self.run_prompt()
+    def run_source(self, source: str):
+        self.run(source)
 
     def run_file(self, script: str):
         with open(script) as file:
@@ -42,7 +41,8 @@ class Lox:
         tokens = lexer.scan_tokens()
         parser = Parser(tokens, self.parser_error)
         statements = parser.parse()
-        AstPrinter().print(statements)
+        if self.show_ast:
+            AstPrinter().print(statements)
 
         for error in lexer.errors:
             self.error(error.line, error.message)

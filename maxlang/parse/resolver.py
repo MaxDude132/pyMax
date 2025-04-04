@@ -3,7 +3,7 @@ from enum import Enum
 from .expressions import ExpressionVisitor, Expression
 from .statements import StatementVisitor, Statement, Lambda
 from .interpreter import Interpreter
-from lex import Token
+from maxlang.lex import Token
 
 
 class ClassType(Enum):

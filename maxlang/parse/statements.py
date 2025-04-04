@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 
-from lex.lexer import Token
+from maxlang.lex.lexer import Token
 from .expressions import Expression, Lambda, Variable
 
 

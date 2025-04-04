@@ -1,5 +1,5 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod
-from errors import InternalError
+from maxlang.errors import InternalError
 
 
 class FloatAdd(BaseInternalMethod):
@@ -51,7 +51,7 @@ class FloatMultiply(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(self.instance.klass, self.instance.value + arguments[0].value)
+            return FloatInstance(self.instance.klass, self.instance.value * arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 

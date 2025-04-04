@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from .main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute
 
 if TYPE_CHECKING:
-    from parse.interpreter import Interpreter
+    from maxlang.parse.interpreter import Interpreter
 
 
 class NextSentinel:

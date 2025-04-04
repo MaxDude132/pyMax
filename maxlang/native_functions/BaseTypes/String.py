@@ -1,5 +1,5 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod
-from errors import InternalError
+from maxlang.errors import InternalError
 
 
 class StringAdd(BaseInternalMethod):

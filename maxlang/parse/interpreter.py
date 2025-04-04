@@ -1,19 +1,19 @@
 from typing import Any, Callable
 
-from lex import TokenType, Token
+from maxlang.lex import TokenType, Token
 from .callable import InternalCallable, FunctionCallable, Return, ClassCallable, InstanceCallable
 from .expressions import ExpressionVisitor, Expression, Binary, Argument
 from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
-from native_functions import NATIVE_FUNCTIONS
-from native_functions.main import BaseInternalInstance
-from native_functions.next import NEXT_SENTINEL
-from native_functions.BaseTypes.Pair import PairInstance, PairClass
-from native_functions.BaseTypes.Int import IntInstance, IntClass
-from native_functions.BaseTypes.Float import FloatInstance, FloatClass
-from native_functions.BaseTypes.String import StringInstance, StringClass
-from native_functions.BaseTypes.Bool import BoolInstance, BoolClass
-from errors import InterpreterError, InternalError
+from maxlang.native_functions import NATIVE_FUNCTIONS
+from maxlang.native_functions.main import BaseInternalInstance
+from maxlang.native_functions.next import NEXT_SENTINEL
+from maxlang.native_functions.BaseTypes.Pair import PairInstance, PairClass
+from maxlang.native_functions.BaseTypes.Int import IntInstance, IntClass
+from maxlang.native_functions.BaseTypes.Float import FloatInstance, FloatClass
+from maxlang.native_functions.BaseTypes.String import StringInstance, StringClass
+from maxlang.native_functions.BaseTypes.Bool import BoolInstance, BoolClass
+from maxlang.errors import InterpreterError, InternalError
 
 
 class InterpreterBase:

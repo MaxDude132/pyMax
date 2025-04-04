@@ -5,7 +5,7 @@ from typing import Any
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance
 from .Pair import PairInstance, PairClass
 from ..next import internal_next
-from errors import InternalError
+from maxlang.errors import InternalError
 
 
 class MapPush(BaseInternalMethod):

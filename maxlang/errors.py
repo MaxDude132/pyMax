@@ -1,4 +1,4 @@
-from lex import Token
+from maxlang.lex import Token
 
 
 class ParserError(Exception):

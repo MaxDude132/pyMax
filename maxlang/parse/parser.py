@@ -1,10 +1,10 @@
 from typing import Callable
 
-from lex import Token
-from lex import TokenType
+from maxlang.lex import Token
+from maxlang.lex import TokenType
 from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair, Argument
 from .statements import Statement, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
-from errors import ParserError
+from maxlang.errors import ParserError
 
 
 class ParserControl:

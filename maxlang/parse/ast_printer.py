@@ -1,7 +1,7 @@
 from .expressions import Expression
 from .statements import Statement
 from .visitor import Visitor
-from native_functions.BaseTypes.Pair import PairClass
+from maxlang.native_functions.BaseTypes.Pair import PairClass
 
 
 class AstPrinter(Visitor):

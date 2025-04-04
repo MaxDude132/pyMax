@@ -1,5 +1,5 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod
-from errors import InternalError
+from maxlang.errors import InternalError
 
 
 class IntAdd(BaseInternalMethod):
@@ -17,7 +17,7 @@ class IntAdd(BaseInternalMethod):
         if isinstance(arguments[0], IntInstance):
             return IntInstance(self.instance.klass, self.instance.value + arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.class_name)
+            klass = interpreter.environment.internal_get(FloatClass.name)
             return FloatInstance(klass, self.instance.value + arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
@@ -38,7 +38,7 @@ class IntSubstract(BaseInternalMethod):
         if isinstance(arguments[0], IntInstance):
             return IntInstance(self.instance.klass, self.instance.value - arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.class_name)
+            klass = interpreter.environment.internal_get(FloatClass.name)
             return FloatInstance(klass, self.instance.value - arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
@@ -59,7 +59,7 @@ class IntMultiply(BaseInternalMethod):
         if isinstance(arguments[0], IntInstance):
             return IntInstance(self.instance.klass, self.instance.value * arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.class_name)
+            klass = interpreter.environment.internal_get(FloatClass.name)
             return FloatInstance(klass, self.instance.value * arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
@@ -81,7 +81,7 @@ class IntDivide(BaseInternalMethod):
             if isinstance(arguments[0], IntInstance):
                 return IntInstance(self.instance.klass, self.instance.value / arguments[0].value)
             if isinstance(arguments[0], FloatInstance):
-                klass = interpreter.environment.internal_get(FloatClass.class_name)
+                klass = interpreter.environment.internal_get(FloatClass.name)
                 return FloatInstance(klass, self.instance.value / arguments[0].value)
         except ZeroDivisionError:
             raise InternalError("Attempted division by zero.")

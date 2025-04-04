@@ -3,8 +3,8 @@ from typing import Any, TYPE_CHECKING
 
 from .expressions import Lambda, Parameter
 from .environment import Environment
-from lex import Token, TokenType
-from errors import InterpreterError, InternalError
+from maxlang.lex import Token, TokenType
+from maxlang.errors import InterpreterError, InternalError
 
 if TYPE_CHECKING:
     from .interpreter import Interpreter

@@ -1,6 +1,6 @@
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance
 from ..next import internal_next
-from errors import InternalError
+from maxlang.errors import InternalError
 
 
 class ListPush(BaseInternalMethod):

@@ -1,13 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from parse.callable import InternalCallable
-from lex import Token
-from errors import InterpreterError, InternalError
-from parse.expressions import Lambda
+from maxlang.parse.callable import InternalCallable
+from maxlang.lex import Token
+from maxlang.errors import InterpreterError, InternalError
+from maxlang.parse.expressions import Lambda
 
 if TYPE_CHECKING:
-    from parse.interpreter import Interpreter
+    from maxlang.parse.interpreter import Interpreter
 
 
 def format_class_name(name: str):
