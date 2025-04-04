@@ -14,6 +14,8 @@
 - implement inequality comparisons between classes (<=, >=, <, >) through the greaterThan method (Note, <= and >= should be handled through equals and greaterThan working together) -- DONE
 - implement negate -- DONE
 - implement isTrue (maybe find a better name in the future) -- DONE
+- change arguments to be passed by name, store methods with their params and types to allow overrides
+- improve error system with different error types, more complete error messages
 - implement addEquals
 - implement substractEquals
 - implement multiplyEquals

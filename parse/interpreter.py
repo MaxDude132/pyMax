@@ -2,7 +2,7 @@ from typing import Any, Callable
 
 from lex import TokenType, Token
 from .callable import InternalCallable, FunctionCallable, Return, ClassCallable, InstanceCallable
-from .expressions import ExpressionVisitor, Expression, Binary
+from .expressions import ExpressionVisitor, Expression, Binary, Argument
 from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from native_functions import NATIVE_FUNCTIONS
@@ -79,12 +79,34 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     
     def visit_call(self, expression):
         callee = self.evaluate(expression.callee)
-
-        arguments: list[Any] = []
-        for argument in expression.arguments:
-            arguments.append(self.evaluate(argument))
-
+        arguments: list[Any] = self.build_arguments(callee, expression.arguments)
         return self.call(expression.paren, callee, arguments)
+    
+    def build_arguments(self, callee: InternalCallable, arguments: list[Argument]):
+        named_args = (arg for arg in arguments if arg.name is not None)
+        arguments_dict = {a.name.name.lexeme: a for a in named_args}
+
+        args = []
+        for argument in arguments:
+            if argument.name is not None:
+                break
+                
+            value = self.evaluate(argument.value)
+            args.append(value)
+
+        for parameter in callee.parameters()[len(args):]:
+            argument = arguments_dict.get(parameter.name.lexeme)
+            if argument is None and parameter.default is None:
+                raise InterpreterError(parameter.name, "Argument required in call.")
+            
+            if argument is not None:
+                value = self.evaluate(argument.value)
+                args.append(value)
+            else:
+                value = self.evaluate(parameter.default)
+                args.append(value)
+
+        return args
         
     def call(self, token: Token, function: InternalCallable, arguments: list[Any]):
         if not isinstance(function, InternalCallable):

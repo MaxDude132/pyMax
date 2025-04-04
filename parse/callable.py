@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
-from .expressions import Lambda
+from .expressions import Lambda, Parameter
 from .environment import Environment
 from lex import Token, TokenType
 from errors import InterpreterError, InternalError
@@ -27,6 +27,9 @@ class InternalCallable:
 
     def lower_arity(self) -> int:
         return 0
+    
+    def parameters(self) -> list[Parameter]:
+        return []
 
     def __str__(self) -> str:
         func_name = ''.join(
@@ -44,10 +47,6 @@ class FunctionCallable(InternalCallable):
         self.class_instance = class_instance
 
     def call(self, interpreter: "Interpreter", arguments: list[Any]):
-        for i, param in enumerate(self.declaration.params):
-            if i >= len(arguments):
-                arguments.append(interpreter.evaluate(param.default))
-
         environment = Environment(self.closure)
         for i, argument in enumerate(arguments):
             environment.define(self.declaration.params[i].name, argument)
@@ -79,6 +78,9 @@ class FunctionCallable(InternalCallable):
     def return_self(self) -> Any | None:
         if self.class_instance is not None:
             return self.closure.get_at(0, "self")
+        
+    def parameters(self):
+        return self.declaration.params
     
     @property
     def class_name(self):
@@ -122,6 +124,12 @@ class ClassCallable(InternalCallable):
         if initialiser is None:
             return 0
         return initialiser.lower_arity()
+        
+    def parameters(self):
+        initialiser = self.find_method(Token(None, "init", None, None))
+        if initialiser is None:
+            return initialiser.declaration.params
+        return []
     
     def find_method(self, name: Token, check_supers: bool = True, errored: bool = False) -> FunctionCallable | None:
         if name.lexeme in self.methods:

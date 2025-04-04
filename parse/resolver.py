@@ -209,3 +209,6 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         self.resolve(statement.in_name)
         self.resolve_many(statement.body)
         self.end_scope()
+
+    def visit_argument(self, expression):
+        self.resolve(expression.value)

@@ -78,14 +78,26 @@ class Lexer:
                 self.add_token(TokenType.COMMA)
             case '.': 
                 self.add_token(TokenType.DOT)
-            case '+': 
-                self.add_token(TokenType.PLUS)
+            case '+':
+                if self.match('='):
+                    self.add_token(TokenType.PLUS_EQUALS)
+                else:
+                    self.add_token(TokenType.PLUS)
             case ':': 
                 self.add_token(TokenType.COLON)
             case ';': 
                 self.add_token(TokenType.SEMICOLON)
-            case '*': 
-                self.add_token(TokenType.STAR)
+            case '*':
+                if self.match('='):
+                    self.add_token(TokenType.STAR_EQUALS)
+                elif self.match('-'):
+                    self.errors.append(
+                        Error(
+                            self.line, "Comment ending without a comment start."
+                        )
+                    )
+                else:
+                    self.add_token(TokenType.STAR)
 
             case '!':
                 self.add_token(TokenType.BANG_EQUAL if self.match('=') else TokenType.BANG)
@@ -97,7 +109,9 @@ class Lexer:
                 self.add_token(TokenType.GREATER_EQUAL if self.match('=') else TokenType.GREATER)
 
             case '-':
-                if self.match('-'):
+                if self.match('='):
+                    self.add_token(TokenType.MINUS_EQUALS)
+                elif self.match('-'):
                     while self.peek() != '\n' and not self.is_at_end():
                         self.advance()
                 elif self.match('*'):
@@ -114,6 +128,8 @@ class Lexer:
             case '/': 
                 if self.match('/'):
                     self.add_token(TokenType.DOUBLE_SLASH)
+                elif self.match('='):
+                    self.add_token(TokenType.SLASH_EQUALS)
                 else:
                     self.add_token(TokenType.SLASH)
 

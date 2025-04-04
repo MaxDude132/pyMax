@@ -26,3 +26,17 @@ for item in test3 {
     print(item)
 }
 *-
+-*
+test = 0
+print(test)
+test += 1
+print(test)
+*-
+
+test: String arg_1, String arg_2 = "test_2", String arg_3 = "setgse" {
+    print(arg_1, arg_2, arg_3)
+}
+
+test_1 = "test"
+
+test("test", arg_3: "test_3")

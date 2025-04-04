@@ -2,7 +2,7 @@ from typing import Callable
 
 from lex import Token
 from lex import TokenType
-from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair
+from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair, Argument
 from .statements import Statement, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
 from errors import ParserError
 
@@ -247,11 +247,23 @@ class ExpressionsParser(ParserControl):
     def finish_call(self, expression: Expression):
         arguments: list[Expression] = []
 
+        has_named_arg = False
+
         self.skip_newlines()
         if not self.check(TokenType.RIGHT_PAREN):
             while True:
                 self.skip_newlines()
-                arguments.append(self.expression())
+                name_or_arg = self.expression()
+                if self.match(TokenType.COLON):
+                    self.skip_newlines()
+                    argument = Argument(name_or_arg, self.expression())
+                    has_named_arg = True
+                else:
+                    if has_named_arg:
+                        raise self.error(self.previous(), "Cannot call with an unnamed argument after a named argument.")
+
+                    argument = Argument(None, name_or_arg)
+                arguments.append(argument)
                 self.skip_newlines()
                 if not self.match(TokenType.COMMA) or self.check(TokenType.RIGHT_PAREN):
                     break

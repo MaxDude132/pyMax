@@ -51,6 +51,9 @@ class ExpressionVisitor:
     def visit_lambda(self, expression: Lambda):
         pass
 
+    def visit_argument(self, expression: Argument):
+        pass
+
 
 @dataclass
 class Expression:
@@ -77,7 +80,7 @@ class Binary(Expression):
 class Call(Expression):
     callee: Expression
     paren: Token
-    arguments: list[Expression]
+    arguments: list[Argument]
     
 
 @dataclass
@@ -155,6 +158,12 @@ class Parameter:
     type_: Token
     name: Token
     default: Expression | None = None
+    
+
+@dataclass
+class Argument(Expression):
+    name: Variable | None
+    value: Expression
 
 
 @dataclass

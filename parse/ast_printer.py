@@ -121,6 +121,9 @@ class AstPrinter(Visitor):
         string += self.parenthesize("endfor")
         return string
     
+    def visit_argument(self, expression):
+        return expression.value.accept(self)
+    
     def parenthesize(self, name: str, *expressions: Expression) -> str:
         string = f"({name}"
 

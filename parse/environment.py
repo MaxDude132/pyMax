@@ -21,6 +21,8 @@ class Environment:
         if self.enclosing is not None:
             return self.enclosing.get(name)
         
+        print("get", name)
+        raise Exception
         raise InterpreterError(name, f"Undefined variable '{name.lexeme}'.")
     
     def internal_get(self, name: str):
@@ -30,6 +32,7 @@ class Environment:
         if self.enclosing is not None:
             return self.enclosing.internal_get(name)
         
+        print("internal_get", name)
         raise InternalError(f"Undefined variable '{name}'")
     
     def get_at(self, distance: int, name: str):

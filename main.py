@@ -42,6 +42,7 @@ class Lox:
         tokens = lexer.scan_tokens()
         parser = Parser(tokens, self.parser_error)
         statements = parser.parse()
+        AstPrinter().print(statements)
 
         for error in lexer.errors:
             self.error(error.line, error.message)
@@ -61,7 +62,6 @@ class Lox:
         if self.had_runtime_error:
             return
         
-        AstPrinter().print(statements)
 
     def error(self, line: int, message: str):
         self.report(line, "", message)

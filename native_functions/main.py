@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from parse.callable import InternalCallable
 from lex import Token
 from errors import InterpreterError, InternalError
+from parse.expressions import Lambda
 
 if TYPE_CHECKING:
     from parse.interpreter import Interpreter
@@ -20,15 +21,10 @@ class BaseInternalFunction(InternalCallable):
         self.interpreter = interpreter
         if hasattr(self, "init"):
             self.init()
-
-    def check_arity(self, arg_count):
-        return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
     
-    def upper_arity(self):
-        return 0
-    
-    def lower_arity(self):
-        return 0
+    @property
+    def declaration(self):
+        return Lambda([], [])
 
 
 class BaseInternalClass(InternalCallable):
