@@ -1,16 +1,17 @@
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 import pytest
 from maxlang import Max
 import io
 
 
 def run_source(source) -> str:
-    string = io.StringIO()
-    with redirect_stdout(string):
+    out = io.StringIO()
+    err = io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
         Max().run_source(source)
-    return string.getvalue().strip()
+    return out.getvalue().strip() or err.getvalue().strip()
 
 
 def formatted_error(message, line):
-    return f"{message}\n[line {line}]"
+    return f"[line {line}] {message}"
     

@@ -27,7 +27,7 @@ class PairEquals(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         if isinstance(arguments[0], PairInstance):
-            return PairInstance(self.instance.klass, self.instance == arguments[0])
+            return PairInstance(interpreter, self.instance == arguments[0])
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -36,11 +36,10 @@ class PairToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
-        stringified = f"{self.instance.class_name}({self.instance.klass.interpreter.stringify(self.instance.first, True)}, {self.instance.klass.interpreter.stringify(self.instance.second, True)})"
-        return StringInstance(klass, f"{self.instance.klass.name}({stringified})")
+        stringified = f"{self.instance.class_name}({interpreter.stringify(self.instance.first, True)}, {interpreter.stringify(self.instance.second, True)})"
+        return StringInstance(interpreter, f"{self.class_name}({stringified})")
 
 
 class PairClass(BaseInternalClass):
@@ -53,10 +52,11 @@ class PairClass(BaseInternalClass):
         return 2
     
     def call(self, interpreter, arguments):
-        return PairInstance(self, arguments[0], arguments[1])
+        return PairInstance(interpreter, arguments[0], arguments[1])
     
 
 class PairInstance(BaseInternalInstance):
+    CLASS = PairClass
     FIELDS = (
         PairFirst,
         PairSecond,

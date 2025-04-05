@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance
-from .Pair import PairInstance, PairClass
+from .Pair import PairInstance
 from ..next import internal_next
 from maxlang.errors import InternalError
 
@@ -46,8 +46,7 @@ class MapIterate(BaseInternalMethod):
     name = "iterate"
 
     def call(self, interpreter, arguments):
-        pair_class = interpreter.globals.internal_get(PairClass.name)
-        values = [PairInstance(pair_class, k, v) for k, v in self.instance.values.items()]
+        values = [PairInstance(interpreter, k, v) for k, v in self.instance.values.items()]
         return internal_next(interpreter, values)
     
 
@@ -62,8 +61,7 @@ class MapRemove(BaseInternalMethod):
         return 1
     
     def call(self, interpreter, arguments):
-        pair_class = interpreter.globals.internal_get(PairClass.name)
-        return PairInstance(pair_class, arguments[0], self.instance.values.pop(arguments[0]))
+        return PairInstance(interpreter, arguments[0], self.instance.values.pop(arguments[0]))
     
 
 class MapAdd(BaseInternalMethod):
@@ -77,7 +75,7 @@ class MapAdd(BaseInternalMethod):
         return 1
     
     def call(self, interpreter, arguments):
-        new_map = MapInstance(self.instance.klass, *self.instance.get_pairs())
+        new_map = MapInstance(interpreter, *self.instance.get_pairs())
         if isinstance(arguments[0], MapInstance):
             new_map.update(arguments[0])
         elif isinstance(arguments[0], PairInstance):
@@ -98,8 +96,10 @@ class MapEquals(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
+        from .Bool import BoolInstance
+
         if isinstance(arguments[0], MapInstance):
-            return MapInstance(self.instance.klass, self.instance == arguments[0])
+            return BoolInstance(interpreter, self.instance == arguments[0])
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -108,21 +108,19 @@ class MapIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
-        klass = interpreter.environment.internal_get(BoolClass.name)
-        return BoolInstance(klass, len(self.values) != 0)
+        return BoolInstance(interpreter, len(self.values) != 0)
 
 
 class MapToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
-        stringified = (" -> ".join((self.instance.klass.interpreter.stringify(k, True), self.instance.klass.interpreter.stringify(v, True))) for k, v in self.instance.values.items())
-        return StringInstance(klass, f"{self.instance.klass.name}({", ".join(stringified)})")
+        stringified = (" -> ".join((interpreter.stringify(k, True), interpreter.stringify(v, True))) for k, v in self.instance.values.items())
+        return StringInstance(interpreter, f"{self.instance.klass.name}({", ".join(stringified)})")
 
 
 class MapClass(BaseInternalClass):
@@ -132,10 +130,11 @@ class MapClass(BaseInternalClass):
         return float("inf")
     
     def call(self, interpreter, arguments: list[tuple[Any, Any]]):
-        return MapInstance(self, *arguments)
+        return MapInstance(interpreter, *arguments)
     
 
 class MapInstance(BaseInternalInstance):
+    CLASS = MapClass
     FIELDS = (
         MapPush,
         MapGet,
@@ -147,8 +146,8 @@ class MapInstance(BaseInternalInstance):
         MapToString,
     )
     
-    def __init__(self, klass,  *args: PairInstance):
-        super().__init__(klass)
+    def __init__(self, interpreter,  *args: PairInstance):
+        super().__init__(interpreter)
         self.values = {arg.first: arg.second for arg in args}
     
     def __str__(self) -> str:
@@ -158,11 +157,9 @@ class MapInstance(BaseInternalInstance):
         return iter(self.get_pairs())
     
     def get_pairs(self):
-        pair_class = self.klass.interpreter.globals.internal_get(PairClass.name)
-
         pairs = []
         for k, v in self.values.items():
-            pairs.append(PairInstance(pair_class, k, v))
+            pairs.append(PairInstance(self.interpreter, k, v))
 
         return pairs
     

@@ -15,7 +15,7 @@ class FloatAdd(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(self.instance.klass, self.instance.value + arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value + arguments[0].value)
 
         raise InternalError(f"Cannot add {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -33,7 +33,7 @@ class FloatSubstract(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(self.instance.klass, self.instance.value - arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value - arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -51,7 +51,7 @@ class FloatMultiply(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(self.instance.klass, self.instance.value * arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value * arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -70,7 +70,7 @@ class FloatDivide(BaseInternalMethod):
         
         if isinstance(arguments[0], (IntInstance, FloatInstance)):
             try:
-                return FloatInstance(self.instance.klass, self.instance.value / arguments[0].value)
+                return FloatInstance(interpreter, self.instance.value / arguments[0].value)
             except ZeroDivisionError:
                 raise InternalError("Attempted division by zero.")
 
@@ -87,11 +87,10 @@ class FloatEquals(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(BoolClass.name)
-            return BoolInstance(klass, self.instance.value == arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value == arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -106,11 +105,10 @@ class FloatGreaterThan(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(BoolClass.name)
-            return BoolInstance(klass, self.instance.value > arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value > arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -119,27 +117,25 @@ class FloatNegate(BaseInternalMethod):
     name = "negate"
 
     def call(self, interpreter, arguments):
-        return FloatInstance(self.instance.klass, -self.instance.value)
+        return FloatInstance(interpreter, -self.instance.value)
 
 
 class FloatToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
-        return StringInstance(klass, str(self.instance.value))
+        return StringInstance(interpreter, str(self.instance.value))
 
 
 class FloatIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
-        klass = interpreter.environment.internal_get(BoolClass.name)
-        return BoolInstance(klass, self.instance.value != 0.0)
+        return BoolInstance(interpreter, self.instance.value != 0.0)
 
 
 class FloatClass(BaseInternalClass):
@@ -152,10 +148,11 @@ class FloatClass(BaseInternalClass):
         return 1
     
     def call(self, interpreter, arguments):
-        return FloatInstance(self, arguments[0])
+        return FloatInstance(interpreter, arguments[0])
     
 
 class FloatInstance(BaseInternalInstance):
+    CLASS = FloatClass
     FIELDS = (
         FloatAdd,
         FloatSubstract,
@@ -168,8 +165,8 @@ class FloatInstance(BaseInternalInstance):
         FloatToString,
     )
 
-    def __init__(self, klass, value):
-        super().__init__(klass)
+    def __init__(self, interpreter, value: float):
+        super().__init__(interpreter)
         self.value = value
     
     def __str__(self):

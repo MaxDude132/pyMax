@@ -75,7 +75,7 @@ class ListAdd(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         if isinstance(arguments[0], ListInstance):
-            new_list = ListInstance(self.instance.klass, *self.instance.values)
+            new_list = ListInstance(interpreter, *self.instance.values)
             new_list.extend(arguments[0].values)
             return new_list
 
@@ -96,7 +96,7 @@ class ListMultiply(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance,)):
-            return ListInstance(self.instance.klass, *(self.instance.values * arguments[0].value))
+            return ListInstance(interpreter, *(self.instance.values * arguments[0].value))
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -111,8 +111,10 @@ class ListEquals(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
+        from .Bool import BoolInstance
+
         if isinstance(arguments[0], ListInstance):
-            return ListInstance(self.instance.klass, self.instance == arguments[0])
+            return BoolInstance(interpreter, self.instance == arguments[0])
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -121,21 +123,19 @@ class ListIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
-        klass = interpreter.environment.internal_get(BoolClass.name)
-        return BoolInstance(klass, len(self.instance.values) != 0)
+        return BoolInstance(interpreter, len(self.instance.values) != 0)
 
 
 class ListToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
         stringified = (self.instance.klass.interpreter.stringify(v, True) for v in self.instance.values)
-        return StringInstance(klass, f"{self.instance.klass.name}({", ".join(stringified)})")
+        return StringInstance(interpreter, f"{self.instance.klass.name}({", ".join(stringified)})")
 
 
 class ListClass(BaseInternalClass):
@@ -145,10 +145,11 @@ class ListClass(BaseInternalClass):
         return float("inf")
     
     def call(self, interpreter, arguments):
-        return ListInstance(self, *arguments)
+        return ListInstance(interpreter, *arguments)
     
 
 class ListInstance(BaseInternalInstance):
+    CLASS = ListClass
     FIELDS = [
         ListPush,
         ListGet,
@@ -162,12 +163,12 @@ class ListInstance(BaseInternalInstance):
         ListToString,
     ]
 
-    def __init__(self, klass,  *args):
-        super().__init__(klass)
+    def __init__(self, interpreter,  *args):
+        super().__init__(interpreter)
         self.values = [*args]
     
     def __str__(self) -> str:
-        return self.internal_find_method("toString").call(self.klass.interpreter, [])
+        return self.internal_find_method("toString").call(self.interpreter, [])
     
     def extend(self, other_list):
         self.values.extend(other_list)

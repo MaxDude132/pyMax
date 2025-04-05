@@ -41,14 +41,15 @@ class Max:
         tokens = lexer.scan_tokens()
         parser = Parser(tokens, self.parser_error)
         statements = parser.parse()
-        if self.show_ast:
-            AstPrinter().print(statements)
 
         for error in lexer.errors:
             self.error(error.line, error.message)
 
         if self.had_error:
             return
+
+        if self.show_ast:
+            AstPrinter().print(statements)
         
         interpreter = Interpreter(self.interpreter_error)
         resolver = Resolver(interpreter, self.parser_error)
@@ -73,7 +74,7 @@ class Max:
             self.report(token.line, f" at '{token.lexeme}'", message)
 
     def interpreter_error(self, error: InterpreterError):
-        print(f"{error.message}\n[line {error.token.line}]")
+        print(f"[line {error.token.line}] {error.message}", file=sys.stderr)
         self.had_runtime_error = True
 
     def report(self, line: int, where: str, message: str):

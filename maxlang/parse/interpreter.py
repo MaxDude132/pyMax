@@ -8,11 +8,11 @@ from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from maxlang.native_functions import NATIVE_FUNCTIONS
 from maxlang.native_functions.main import BaseInternalInstance
 from maxlang.native_functions.next import NEXT_SENTINEL
-from maxlang.native_functions.BaseTypes.Pair import PairInstance, PairClass
-from maxlang.native_functions.BaseTypes.Int import IntInstance, IntClass
-from maxlang.native_functions.BaseTypes.Float import FloatInstance, FloatClass
-from maxlang.native_functions.BaseTypes.String import StringInstance, StringClass
-from maxlang.native_functions.BaseTypes.Bool import BoolInstance, BoolClass
+from maxlang.native_functions.BaseTypes.Pair import PairInstance
+from maxlang.native_functions.BaseTypes.Int import IntInstance
+from maxlang.native_functions.BaseTypes.Float import FloatInstance
+from maxlang.native_functions.BaseTypes.String import StringInstance
+from maxlang.native_functions.BaseTypes.Bool import BoolInstance
 from maxlang.errors import InterpreterError, InternalError
 
 
@@ -45,13 +45,19 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             case TokenType.GREATER:
                 return self.binary_operation(expression, "greaterThan")
             case TokenType.GREATER_EQUAL:
-                return self.binary_operation(expression, "greaterThan") or self.binary_operation(expression, "equals")
+                is_greater = self.binary_operation(expression, "greaterThan").value
+                is_equal = self.binary_operation(expression, "equals").value
+                return BoolInstance(self, is_greater or is_equal)
             case TokenType.LESS:
-                return not self.binary_operation(expression, "greaterThan") and not self.binary_operation(expression, "equals")
+                is_greater = self.binary_operation(expression, "greaterThan").value
+                is_equal = self.binary_operation(expression, "equals").value
+                return BoolInstance(self, not is_greater and not is_equal)
             case TokenType.LESS_EQUAL:
-                return not self.binary_operation(expression, "greaterThan")
+                is_greater = self.binary_operation(expression, "greaterThan").value
+                return BoolInstance(self, not is_greater)
             case TokenType.BANG_EQUAL:
-                return not self.binary_operation(expression, "equals")
+                is_equal = self.binary_operation(expression, "equals").value
+                return BoolInstance(self, not is_equal)
             case TokenType.EQUAL_EQUAL:
                 return self.binary_operation(expression, "equals")
             case TokenType.MINUS:
@@ -133,20 +139,16 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     
     def visit_literal(self, expression):
         if isinstance(expression.value, bool):
-            klass = self.environment.internal_get(BoolClass.name)
-            return BoolInstance(klass, expression.value)
+            return BoolInstance(self, expression.value)
         
         if isinstance(expression.value, int):
-            klass = self.environment.internal_get(IntClass.name)
-            return IntInstance(klass, expression.value)
+            return IntInstance(self, expression.value)
         
         if isinstance(expression.value, float):
-            klass = self.environment.internal_get(FloatClass.name)
-            return FloatInstance(klass, expression.value)
+            return FloatInstance(self, expression.value)
         
         if isinstance(expression.value, str):
-            klass = self.environment.internal_get(StringClass.name)
-            return StringInstance(klass, expression.value)
+            return StringInstance(self, expression.value)
 
         return expression.value
     
@@ -233,8 +235,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return FunctionCallable(None, expression, self.environment)
     
     def visit_pair(self, expression):
-        klass = self.environment.internal_get(PairClass.name)
-        return PairInstance(klass, self.evaluate(expression.left), self.evaluate(expression.right))
+        return PairInstance(self, self.evaluate(expression.left), self.evaluate(expression.right))
     
     def evaluate(self, expression: Expression):
         return expression.accept(self)
@@ -247,7 +248,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
     
     def stringify(self, obj: Any, keep_string_quotes: bool = False):
         if obj is None:
-            return "nil"
+            return "null"
         
         if isinstance(obj, str):
             return f'"{obj}"' if keep_string_quotes else obj

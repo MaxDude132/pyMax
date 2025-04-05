@@ -12,13 +12,12 @@ class IntAdd(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatClass, FloatInstance
+        from .Float import FloatInstance
 
         if isinstance(arguments[0], IntInstance):
-            return IntInstance(self.instance.klass, self.instance.value + arguments[0].value)
+            return IntInstance(interpreter, self.instance.value + arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.name)
-            return FloatInstance(klass, self.instance.value + arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value + arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -33,13 +32,12 @@ class IntSubstract(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatClass, FloatInstance
+        from .Float import FloatInstance
 
         if isinstance(arguments[0], IntInstance):
-            return IntInstance(self.instance.klass, self.instance.value - arguments[0].value)
+            return IntInstance(interpreter, self.instance.value - arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.name)
-            return FloatInstance(klass, self.instance.value - arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value - arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -54,13 +52,12 @@ class IntMultiply(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatClass, FloatInstance
+        from .Float import FloatInstance
 
         if isinstance(arguments[0], IntInstance):
-            return IntInstance(self.instance.klass, self.instance.value * arguments[0].value)
+            return IntInstance(interpreter, self.instance.value * arguments[0].value)
         if isinstance(arguments[0], FloatInstance):
-            klass = interpreter.environment.internal_get(FloatClass.name)
-            return FloatInstance(klass, self.instance.value * arguments[0].value)
+            return FloatInstance(interpreter, self.instance.value * arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -75,14 +72,13 @@ class IntDivide(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatClass, FloatInstance
+        from .Float import FloatInstance
 
         try:
             if isinstance(arguments[0], IntInstance):
-                return IntInstance(self.instance.klass, self.instance.value / arguments[0].value)
+                return IntInstance(interpreter, self.instance.value / arguments[0].value)
             if isinstance(arguments[0], FloatInstance):
-                klass = interpreter.environment.internal_get(FloatClass.name)
-                return FloatInstance(klass, self.instance.value / arguments[0].value)
+                return FloatInstance(interpreter, self.instance.value / arguments[0].value)
         except ZeroDivisionError:
             raise InternalError("Attempted division by zero.")
 
@@ -99,8 +95,10 @@ class IntEquals(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
+        from .Bool import BoolInstance
+
         if isinstance(arguments[0], IntInstance):
-            return IntInstance(self.instance.klass, self.instance.value == arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value == arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -115,8 +113,10 @@ class IntGreaterThan(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
+        from .Bool import BoolInstance
+
         if isinstance(arguments[0], IntInstance):
-            return IntInstance(self.instance.klass, self.instance.value > arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value > arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -125,27 +125,25 @@ class IntNegate(BaseInternalMethod):
     name = "negate"
 
     def call(self, interpreter, arguments):
-        return IntInstance(self.instance.klass, -self.instance.value)
+        return IntInstance(interpreter, -self.instance.value)
 
 
 class IntIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
-        klass = interpreter.environment.internal_get(BoolClass.name)
-        return BoolInstance(klass, self.instance.value != 0)
+        return BoolInstance(interpreter, self.instance.value != 0)
 
 
 class IntToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
-        return StringInstance(klass, str(self.instance.value))
+        return StringInstance(interpreter, str(self.instance.value))
 
 
 class IntClass(BaseInternalClass):
@@ -158,10 +156,11 @@ class IntClass(BaseInternalClass):
         return 1
     
     def call(self, interpreter, arguments):
-        return IntInstance(self, arguments[0])
+        return IntInstance(interpreter, arguments[0])
     
 
 class IntInstance(BaseInternalInstance):
+    CLASS = IntClass
     FIELDS = (
         IntAdd,
         IntSubstract,
@@ -174,8 +173,8 @@ class IntInstance(BaseInternalInstance):
         IntToString,
     )
 
-    def __init__(self, klass, value):
-        super().__init__(klass)
+    def __init__(self, interpreter, value: int):
+        super().__init__(interpreter)
         self.value = value
     
     def __str__(self):

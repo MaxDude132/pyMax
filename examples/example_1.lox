@@ -1,41 +1,4 @@
 
-class IteratorTest {
-    init: List values = List() {
-        self.values = values
-    }
-
-    add: IteratorTest other {
-        self.values.extend(other.values)
-    }
-
-    iterate {
-        return self.values.iterate()
-    }
+test: String arg_1 = "test", String arg_2 {
+    print(arg_1)
 }
-
-list = List()
-list.extend(List(1, 2))
-print(list)
-
-test = IteratorTest(List(1))
-test2 = IteratorTest(List(2, 3))
-test3 = test + test2
-print(test3.values)
-
-for item in test3 {
-    print(item)
-}
--*
-test = 0
-print(test)
-test += 1
-print(test)
-*-
-
-test: String arg_1, String arg_2 = "test_2", String arg_3 = "setgse" {
-    print(arg_1, arg_2, arg_3)
-}
-
-test_1 = "test"
-
-test("test", arg_3: "test_3")

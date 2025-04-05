@@ -1,4 +1,4 @@
-from ..main import run_source, formatted_error
+from .main import run_source, formatted_error
 
 
 def test_addition():
@@ -41,3 +41,15 @@ def test_multiplication():
     assert run_source("print(List(1, 2) * 2)") == "List(1, 2, 1, 2)"
     assert run_source("print(Map(1 -> 'test') * 2)") == formatted_error("<Map> does not implement the multiply method.", 1)
     assert run_source("print((1 -> 'test') * 2)") == formatted_error("<Pair> does not implement the multiply method.", 1)
+
+
+def test_division():
+    assert run_source("print(4 / 2)") == "2.0"
+    assert run_source("print(4 / 2.0)") == "2.0"
+    assert run_source("print(4.0 / 2)") == "2.0"
+    assert run_source("print(2.3 / 1.2)") == "1.9166666666666665"  # Floating point edge case
+    assert run_source("print('test' / 't')") == formatted_error("<String> does not implement the divide method.", 1)
+    assert run_source("print(true / 't')") == formatted_error("<Bool> does not implement the divide method.", 1)
+    assert run_source("print(List(1, 2) / 1)") == formatted_error("<List> does not implement the divide method.", 1)
+    assert run_source("print(Map(1 -> 'test') / 1)") == formatted_error("<Map> does not implement the divide method.", 1)
+    assert run_source("print((1 -> 'test') / 1)") == formatted_error("<Pair> does not implement the divide method.", 1)

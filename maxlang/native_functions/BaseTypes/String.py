@@ -16,7 +16,7 @@ class StringAdd(BaseInternalMethod):
         from .Float import FloatInstance
         
         if isinstance(arguments[0], (IntInstance, FloatInstance, StringInstance)):
-            return StringInstance(self.instance.klass, self.instance.value + str(arguments[0].value))
+            return StringInstance(interpreter, self.instance.value + str(arguments[0].value))
 
         raise InternalError(f"Cannot add {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -34,7 +34,7 @@ class StringMultiply(BaseInternalMethod):
         from .Int import IntInstance
         
         if isinstance(arguments[0], (IntInstance,)):
-            return StringInstance(self.instance.klass, self.instance.value * arguments[0].value)
+            return StringInstance(interpreter, self.instance.value * arguments[0].value)
 
         raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -49,11 +49,10 @@ class StringEquals(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
         if isinstance(arguments[0], StringInstance):
-            klass = interpreter.environment.internal_get(BoolClass.name)
-            return BoolInstance(klass, self.instance.value == arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value == arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -62,17 +61,16 @@ class StringIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        from .Bool import BoolClass, BoolInstance
+        from .Bool import BoolInstance
 
-        klass = interpreter.environment.internal_get(BoolClass.name)
-        return BoolInstance(klass, len(self.instance.value) != 0)
+        return BoolInstance(interpreter, len(self.instance.value) != 0)
 
 
 class StringToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        return StringInstance(self.instance.klass, self.instance.value)
+        return StringInstance(interpreter, self.instance.value)
 
 
 class StringClass(BaseInternalClass):
@@ -85,10 +83,11 @@ class StringClass(BaseInternalClass):
         return 1
     
     def call(self, interpreter, arguments):
-        return StringInstance(self, arguments[0])
+        return StringInstance(interpreter, arguments[0])
     
 
 class StringInstance(BaseInternalInstance):
+    CLASS = StringClass
     FIELDS = (
         StringAdd,
         StringMultiply,

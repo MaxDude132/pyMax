@@ -22,17 +22,17 @@ class ParserControl:
             
         return False
     
-    def check(self, token_type: TokenType) -> bool:
+    def check(self, *token_types: TokenType) -> bool:
         if self.is_at_end():
             return False
         
-        return self.peek().type_ == token_type
+        return any(self.peek().type_ == type_ for type_ in token_types)
     
-    def check_next(self, token_type: TokenType) -> bool:
+    def check_next(self, *token_types: TokenType) -> bool:
         if self.is_at_end() or self.peek_next().type_ == TokenType.EOF:
             return False
         
-        return self.peek_next().type_ == token_type
+        return any(self.peek_next().type_ == type_ for type_ in token_types)
     
     def advance(self) -> Token:
         if not self.is_at_end():
@@ -74,18 +74,17 @@ class ParserControl:
         self.advance()
 
         while not self.is_at_end():
-            if self.previous().type_ == TokenType.NEWLINE:
-                return
-            
             if self.peek().type_ in (
                 TokenType.CLASS,
                 TokenType.LAMBDA,
-                TokenType.VAR,
                 TokenType.FOR,
                 TokenType.IF,
                 TokenType.WHILE,
                 TokenType.RETURN,
             ):
+                return
+            
+            if self.check(TokenType.IDENTIFIER) and self.check_next(TokenType.COLON, TokenType.LEFT_BRACE):
                 return
             
             self.advance()

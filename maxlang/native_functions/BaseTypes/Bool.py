@@ -13,7 +13,7 @@ class BoolEquals(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         if isinstance(arguments[0], BoolInstance):
-            return BoolInstance(self.instance.klass, self.instance.value is arguments[0].value)
+            return BoolInstance(interpreter, self.instance.value is arguments[0].value)
 
         raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
 
@@ -22,17 +22,16 @@ class BoolIsTrue(BaseInternalMethod):
     name = "isTrue"
 
     def call(self, interpreter, arguments):
-        return BoolInstance(self.instance.klass, self.instance.value)
+        return BoolInstance(interpreter, self.instance.value)
 
 
 class BoolToString(BaseInternalMethod):
     name = "toString"
 
     def call(self, interpreter, arguments):
-        from .String import StringClass, StringInstance
+        from .String import StringInstance
 
-        klass = interpreter.environment.internal_get(StringClass.name)
-        return StringInstance(klass, "true" if self.instance.value else "false")
+        return StringInstance(interpreter, "true" if self.instance.value else "false")
 
 
 class BoolClass(BaseInternalClass):
@@ -45,18 +44,19 @@ class BoolClass(BaseInternalClass):
         return 1
     
     def call(self, interpreter, arguments):
-        return BoolInstance(self, arguments[0])
+        return BoolInstance(interpreter, arguments[0])
     
 
 class BoolInstance(BaseInternalInstance):
+    CLASS = BoolClass
     FIELDS = (
         BoolEquals,
         BoolIsTrue,
         BoolToString,
     )
 
-    def __init__(self, klass, value):
-        super().__init__(klass)
+    def __init__(self, interpreter, value: bool):
+        super().__init__(interpreter)
         self.value = value
     
     def __str__(self):

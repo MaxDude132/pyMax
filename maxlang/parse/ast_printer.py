@@ -17,7 +17,7 @@ class AstPrinter(Visitor):
     
     def visit_literal(self, expression) -> str:
         if expression.value is None:
-            return "nil"
+            return "null"
         if isinstance(expression.value, str):
             return f'"{expression.value}"'
         
@@ -123,6 +123,7 @@ class AstPrinter(Visitor):
     
     def visit_argument(self, expression):
         return expression.value.accept(self)
+    
     
     def parenthesize(self, name: str, *expressions: Expression) -> str:
         string = f"({name}"

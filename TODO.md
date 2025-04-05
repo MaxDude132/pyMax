@@ -15,7 +15,7 @@
 - implement negate -- DONE
 - implement isTrue (maybe find a better name in the future) -- DONE
 - allow passing arguments by name, store methods with their params and types to allow overrides -- DONE
-- write a test suite
+- write a test suite -- DONE
 - improve error system with different error types, more complete error messages
 - implement addEquals
 - implement substractEquals

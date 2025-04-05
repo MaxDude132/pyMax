@@ -108,13 +108,15 @@ class SharedIsNotTrue(BaseInternalMethod):
 
 
 class BaseInternalInstance(InternalCallable):
+    CLASS = BaseInternalClass
     FIELDS = ()
     __COMMON_FIELDS = (
         SharedIsNotTrue,
     )
 
-    def __init__(self, klass: BaseInternalClass):
-        self.klass = klass
+    def __init__(self, interpreter: Interpreter):
+        self.interpreter = interpreter
+        self.klass = self.interpreter.environment.internal_get(self.CLASS.name)
         self._fields = {m.name: m(self) for m in self.__COMMON_FIELDS}
         self._fields.update({m.name: m(self) for m in self.FIELDS})
     
