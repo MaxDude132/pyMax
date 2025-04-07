@@ -41,7 +41,9 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         for superclass in statement.superclasses:
             self.current_class = ClassType.SUBCLASS
             if superclass.name.lexeme == statement.name.lexeme:
-                self.parser_error(superclass.name, "A class cannot inherit from itself.")
+                self.parser_error(
+                    superclass.name, "A class cannot inherit from itself."
+                )
         self.resolve_many(statement.superclasses)
 
         for superclass in statement.superclasses:
@@ -61,7 +63,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
 
         for superclass in statement.superclasses:
             self.end_scope()
-        
+
         self.current_class = enclosing_class
 
     def resolve_many(self, statements: list[Statement]):
@@ -86,18 +88,18 @@ class Resolver(ExpressionVisitor, StatementVisitor):
     def declare(self, name: Token, skip_validation: bool = False):
         if not self.scopes:
             return
-        
+
         scope = self.scopes[-1]
         if name.lexeme in scope:
-            self.parser_error( 
+            self.parser_error(
                 name, f"Already a variable with the name '{name.lexeme}' in this scope."
             )
         scope[name.lexeme] = False
-        
+
     def define(self, name: Token):
         if not self.scopes:
             return
-        
+
         self.scopes[-1][name.lexeme] = True
 
     def visit_variable(self, expression):
@@ -115,7 +117,9 @@ class Resolver(ExpressionVisitor, StatementVisitor):
     def resolve_local(self, expression: Expression, name: Token):
         for i, scope in enumerate(reversed(self.scopes)):
             if name.lexeme in scope:
-                self.interpreter.resolve(expression, len(self.scopes) - (len(self.scopes) - i))
+                self.interpreter.resolve(
+                    expression, len(self.scopes) - (len(self.scopes) - i)
+                )
 
     def visit_function(self, statement):
         self.declare(statement.name)
@@ -134,13 +138,13 @@ class Resolver(ExpressionVisitor, StatementVisitor):
 
     def visit_return_statement(self, statement):
         if self.current_function == FunctionType.NONE:
-            self.parser_error(
-                statement.keyword, "Can't return from top-level code."
-            )
+            self.parser_error(statement.keyword, "Can't return from top-level code.")
 
         if statement.value is not None:
             if self.current_function == FunctionType.INITIALIZER:
-                self.parser_error(statement.keyword, "Cannot return a value from an initialier.")
+                self.parser_error(
+                    statement.keyword, "Cannot return a value from an initialier."
+                )
 
             self.resolve(statement.value)
 
@@ -162,7 +166,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
     def visit_logical(self, expression):
         self.resolve(expression.left)
         self.resolve(expression.right)
-        
+
     def visit_lambda(self, expression):
         self.resolve_function(expression, FunctionType.FUNCTION)
 
@@ -191,15 +195,21 @@ class Resolver(ExpressionVisitor, StatementVisitor):
 
     def visit_self(self, expression):
         if self.current_class == ClassType.NONE:
-            self.parser_error(expression.keyword, "Can't use 'self' outside of a class.")
+            self.parser_error(
+                expression.keyword, "Can't use 'self' outside of a class."
+            )
 
         self.resolve_local(expression, expression.keyword)
 
     def visit_super(self, expression):
         if self.current_class == ClassType.NONE:
-            self.parser_error(expression.keyword, "Cannot use 'super' outside of a class.")
+            self.parser_error(
+                expression.keyword, "Cannot use 'super' outside of a class."
+            )
         elif self.current_class != ClassType.SUBCLASS:
-            self.parser_error(expression.keyword, "Cannot use 'super' in a class with no superclass.")
+            self.parser_error(
+                expression.keyword, "Cannot use 'super' in a class with no superclass."
+            )
 
         self.resolve_local(expression, expression.keyword)
 

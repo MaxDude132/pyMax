@@ -17,22 +17,21 @@ class Environment:
     def get(self, name: Token) -> Any:
         if name.lexeme in self.values:
             return self.values.get(name.lexeme)
-        
+
         if self.enclosing is not None:
             return self.enclosing.get(name)
-        
+
         raise InterpreterError(name, f"Undefined variable '{name.lexeme}'.")
-    
+
     def internal_get(self, name: str):
         if name in self.values:
             return self.values[name]
-        
+
         if self.enclosing is not None:
             return self.enclosing.internal_get(name)
-        
-        print("internal_get", name)
+
         raise InternalError(f"Undefined variable '{name}'")
-    
+
     def get_at(self, distance: int, name: str):
         return self.ancestor(distance).values.get(name)
 
@@ -54,9 +53,9 @@ class Environment:
         if self.enclosing is not None:
             self.enclosing.assign(name, value, True)
             return
-            
+
         if not only_if_found:
             self.values[name.lexeme] = value
-    
+
     def assign_at(self, distance: int, name: Token, value: Any):
         self.ancestor(distance).values[name.lexeme] = value

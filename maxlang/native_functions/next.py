@@ -55,10 +55,10 @@ class NextClass(BaseInternalClass):
 
     def lower_arity(self):
         return 2
-    
+
     def upper_arity(self):
         return 2
-    
+
     def init(self):
         self.value = None
         self.next = None
@@ -67,12 +67,12 @@ class NextClass(BaseInternalClass):
         self.value = arguments[0]
         self.next = arguments[1]
         return self
-    
+
     def internal_set(self, value, next_node):
         self.value = value
         self.next = next_node
         return self
-    
+
 
 class NextInstance(BaseInternalInstance):
     FIELDS = (
@@ -84,6 +84,6 @@ class NextInstance(BaseInternalInstance):
         super().__init__(klass)
         self.value = value
         self.next_node = next_node
-    
+
     def __str__(self):
         return f"{self.class_name}({self.klass.interpreter.stringify(self.value, True)}, {self.next_node})"

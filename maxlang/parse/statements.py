@@ -37,11 +37,11 @@ class StatementVisitor:
 @dataclass
 class Statement:
     def accept(self, visitor: StatementVisitor):
-        class_name = ''.join(
-            '_' + char.lower() if char.isupper() else char
+        class_name = "".join(
+            "_" + char.lower() if char.isupper() else char
             for char in self.__class__.__name__
-        ).lstrip('_')
-        func = getattr(visitor, f'visit_{class_name}')
+        ).lstrip("_")
+        func = getattr(visitor, f"visit_{class_name}")
         return func(self)
 
 

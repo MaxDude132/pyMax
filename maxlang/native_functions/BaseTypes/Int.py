@@ -1,5 +1,18 @@
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
 from maxlang.errors import InternalError
+
+
+class IntInit(BaseInternalMethod):
+    name = "init"
+
+    def lower_arity(self):
+        return 1
+
+    def upper_arity(self):
+        return 1
+
+    def call(self, interpreter, arguments):
+        self.instance.set_value(arguments[0])
 
 
 class IntAdd(BaseInternalMethod):
@@ -7,19 +20,25 @@ class IntAdd(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatInstance
+        from .Float import FloatInstance, FloatClass
 
-        if isinstance(arguments[0], IntInstance):
-            return IntInstance(interpreter, self.instance.value + arguments[0].value)
-        if isinstance(arguments[0], FloatInstance):
-            return FloatInstance(interpreter, self.instance.value + arguments[0].value)
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return IntInstance(interpreter).set_value(
+                self.instance.value + arguments[0].value
+            )
+        if is_instance(interpreter, arguments[0], FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value + arguments[0].value
+            )
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntSubstract(BaseInternalMethod):
@@ -27,19 +46,25 @@ class IntSubstract(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatInstance
+        from .Float import FloatInstance, FloatClass
 
-        if isinstance(arguments[0], IntInstance):
-            return IntInstance(interpreter, self.instance.value - arguments[0].value)
-        if isinstance(arguments[0], FloatInstance):
-            return FloatInstance(interpreter, self.instance.value - arguments[0].value)
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return IntInstance(interpreter).set_value(
+                self.instance.value - arguments[0].value
+            )
+        if is_instance(interpreter, arguments[0], FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value - arguments[0].value
+            )
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntMultiply(BaseInternalMethod):
@@ -47,19 +72,25 @@ class IntMultiply(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatInstance
+        from .Float import FloatInstance, FloatClass
 
-        if isinstance(arguments[0], IntInstance):
-            return IntInstance(interpreter, self.instance.value * arguments[0].value)
-        if isinstance(arguments[0], FloatInstance):
-            return FloatInstance(interpreter, self.instance.value * arguments[0].value)
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return IntInstance(interpreter).set_value(
+                self.instance.value * arguments[0].value
+            )
+        if is_instance(interpreter, arguments[0], FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value * arguments[0].value
+            )
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntDivide(BaseInternalMethod):
@@ -67,22 +98,28 @@ class IntDivide(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Float import FloatInstance
+        from .Float import FloatInstance, FloatClass
 
         try:
-            if isinstance(arguments[0], IntInstance):
-                return IntInstance(interpreter, self.instance.value / arguments[0].value)
-            if isinstance(arguments[0], FloatInstance):
-                return FloatInstance(interpreter, self.instance.value / arguments[0].value)
+            if is_instance(interpreter, arguments[0], IntClass.name):
+                return IntInstance(interpreter).set_value(
+                    self.instance.value / arguments[0].value
+                )
+            if is_instance(interpreter, arguments[0], FloatClass.name):
+                return FloatInstance(interpreter).set_value(
+                    self.instance.value / arguments[0].value
+                )
         except ZeroDivisionError:
             raise InternalError("Attempted division by zero.")
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntEquals(BaseInternalMethod):
@@ -90,17 +127,21 @@ class IntEquals(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        if isinstance(arguments[0], IntInstance):
-            return BoolInstance(interpreter, self.instance.value == arguments[0].value)
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return BoolInstance(interpreter).set_value(
+                self.instance.value == arguments[0].value
+            )
 
-        raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntGreaterThan(BaseInternalMethod):
@@ -108,24 +149,28 @@ class IntGreaterThan(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        if isinstance(arguments[0], IntInstance):
-            return BoolInstance(interpreter, self.instance.value > arguments[0].value)
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return BoolInstance(interpreter).set_value(
+                self.instance.value > arguments[0].value
+            )
 
-        raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class IntNegate(BaseInternalMethod):
     name = "negate"
 
     def call(self, interpreter, arguments):
-        return IntInstance(interpreter, -self.instance.value)
+        return IntInstance(interpreter).set_value(-self.instance.value)
 
 
 class IntIsTrue(BaseInternalMethod):
@@ -134,7 +179,7 @@ class IntIsTrue(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        return BoolInstance(interpreter, self.instance.value != 0)
+        return BoolInstance(interpreter).set_value(self.instance.value != 0)
 
 
 class IntToString(BaseInternalMethod):
@@ -143,25 +188,13 @@ class IntToString(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
-        return StringInstance(interpreter, str(self.instance.value))
+        return StringInstance(interpreter).set_value(str(self.instance.value))
 
 
 class IntClass(BaseInternalClass):
     name = "Int"
-
-    def lower_arity(self):
-        return 1
-    
-    def upper_arity(self):
-        return 1
-    
-    def call(self, interpreter, arguments):
-        return IntInstance(interpreter, arguments[0])
-    
-
-class IntInstance(BaseInternalInstance):
-    CLASS = IntClass
     FIELDS = (
+        IntInit,
         IntAdd,
         IntSubstract,
         IntMultiply,
@@ -173,18 +206,36 @@ class IntInstance(BaseInternalInstance):
         IntToString,
     )
 
-    def __init__(self, interpreter, value: int):
+    @property
+    def instance_class(self):
+        return IntInstance
+
+    def lower_arity(self):
+        return 1
+
+    def upper_arity(self):
+        return 1
+
+
+class IntInstance(BaseInternalInstance):
+    CLASS = IntClass
+
+    def __init__(self, interpreter):
         super().__init__(interpreter)
+        self.value = None
+
+    def set_value(self, value):
         self.value = value
-    
+        return self
+
     def __str__(self):
         return str(self.value)
-    
+
     def __eq__(self, other):
         if not isinstance(other, IntInstance):
             return False
-        
+
         return self.value == other.value
-    
+
     def __hash__(self):
         return hash(self.value)

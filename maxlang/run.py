@@ -2,11 +2,11 @@ from argparse import ArgumentParser
 from maxlang.main import Max
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     arg_parser = ArgumentParser()
-    arg_parser.add_argument("script", nargs='?')
+    arg_parser.add_argument("script", nargs="?")
     arg_parser.add_argument("--source", "-s")
-    arg_parser.add_argument("--decompose", "-d", action='store_true')
+    arg_parser.add_argument("--decompose", "-d", action="store_true")
     args = arg_parser.parse_args()
 
     if args.script:

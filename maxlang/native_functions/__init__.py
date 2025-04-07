@@ -11,12 +11,9 @@ from .BaseTypes.Bool import BoolClass
 from .next import NextClass
 
 
-NATIVE_FUNCTIONS = {
-    func.name: func for func in (
-        # Builtin functions
-        Clock,
-        Print,
-
+BUILTIN_TYPES = {
+    func.name: func
+    for func in (
         # Base types
         IntClass,
         FloatClass,
@@ -27,4 +24,15 @@ NATIVE_FUNCTIONS = {
         PairClass,
         NextClass,
     )
+}
+
+
+NATIVE_FUNCTIONS = {
+    func.name: func
+    for func in (
+        # Builtin functions
+        Clock,
+        Print,
+    )
+    + tuple(BUILTIN_TYPES.values())
 }

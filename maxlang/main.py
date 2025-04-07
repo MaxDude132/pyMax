@@ -4,6 +4,7 @@ from .lex import Lexer, Token, TokenType
 from .parse import Parser, AstPrinter, Interpreter, Resolver
 from .errors import InterpreterError
 
+
 class Max:
     had_error: bool
 
@@ -28,7 +29,7 @@ class Max:
     def run_prompt(self):
         while True:
             try:
-                line = input('> ')
+                line = input("> ")
                 self.run(line)
                 self.had_error = False
                 self.had_runtime_error = False
@@ -50,19 +51,18 @@ class Max:
 
         if self.show_ast:
             AstPrinter().print(statements)
-        
+
         interpreter = Interpreter(self.interpreter_error)
         resolver = Resolver(interpreter, self.parser_error)
         resolver.resolve_many(statements)
 
         if self.had_error:
             return
-        
+
         interpreter.interpret(statements)
 
         if self.had_runtime_error:
             return
-        
 
     def error(self, line: int, message: str):
         self.report(line, "", message)

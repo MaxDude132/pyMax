@@ -1,5 +1,4 @@
 from contextlib import redirect_stdout, redirect_stderr
-import pytest
 from maxlang import Max
 import io
 
@@ -14,4 +13,3 @@ def run_source(source) -> str:
 
 def formatted_error(message, line):
     return f"[line {line}] {message}"
-    

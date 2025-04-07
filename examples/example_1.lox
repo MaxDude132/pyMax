@@ -1,4 +1,8 @@
-
-test: String arg_1 = "test", String arg_2 {
-    print(arg_1)
+class MyString: String {
+    init: String value {
+        super(value)
+    }
 }
+
+--print(MyString("test") == "test")
+print(1.0 + 1.0)

@@ -1,6 +1,19 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance
+from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance
 from ..next import internal_next
 from maxlang.errors import InternalError
+
+
+class ListInit(BaseInternalMethod):
+    name = "init"
+
+    def lower_arity(self):
+        return 0
+
+    def upper_arity(self):
+        return float("inf")
+
+    def call(self, interpreter, arguments):
+        self.instance.set_values(*arguments)
 
 
 class ListPush(BaseInternalMethod):
@@ -8,53 +21,53 @@ class ListPush(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
-    
+
     def call(self, interpreter, arguments):
         self.instance.values.append(arguments[0])
-        return self.return_self()
 
 
 class ListPop(BaseInternalMethod):
     name = "pop"
-    
+
     def call(self, interpreter, arguments):
         return self.instance.values.pop()
-    
+
 
 class ListGet(BaseInternalMethod):
     name = "get"
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
-    
+
     def call(self, interpreter, arguments):
         return self.instance.values[int(arguments[0])]
-    
+
 
 class ListExtend(BaseInternalMethod):
     name = "extend"
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
-    
+
     def call(self, interpreter, arguments):
-        if not isinstance(arguments[0], ListInstance):
-            raise InternalError("Can only extend a List with another list. Use push to add an item to a List.")
-        
+        if not is_instance(interpreter, arguments[0], ListClass.name):
+            raise InternalError(
+                "Can only extend a List with another list. Use push to add an item to a List."
+            )
+
         if arguments[0] == self.instance:
             raise InternalError("Cannot extend a List with itself.")
 
         self.instance.extend(arguments[0].values)
-        return self.return_self()
 
 
 class ListIterate(BaseInternalMethod):
@@ -69,18 +82,19 @@ class ListAdd(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        if isinstance(arguments[0], ListInstance):
-            new_list = ListInstance(interpreter, *self.instance.values)
+        if is_instance(interpreter, arguments[0], ListClass.name):
+            new_list = ListInstance(interpreter).set_values(*self.instance.values)
             new_list.extend(arguments[0].values)
             return new_list
 
-        raise InternalError("Can only add a List to a List. Use the push method to add items to a List.")
-
+        raise InternalError(
+            "Can only add a List to a List. Use the push method to add items to a List."
+        )
 
 
 class ListMultiply(BaseInternalMethod):
@@ -88,17 +102,21 @@ class ListMultiply(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        
-        if isinstance(arguments[0], (IntInstance,)):
-            return ListInstance(interpreter, *(self.instance.values * arguments[0].value))
+        from .Int import IntClass
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        if is_instance(interpreter, arguments[0], IntClass.name):
+            return ListInstance(interpreter).set_values(
+                *(self.instance.values * arguments[0].value)
+            )
+
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class ListEquals(BaseInternalMethod):
@@ -106,17 +124,19 @@ class ListEquals(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        if isinstance(arguments[0], ListInstance):
-            return BoolInstance(interpreter, self.instance == arguments[0])
+        if is_instance(interpreter, arguments[0], ListClass.name):
+            return BoolInstance(interpreter).set_value(self.instance == arguments[0])
 
-        raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class ListIsTrue(BaseInternalMethod):
@@ -125,7 +145,7 @@ class ListIsTrue(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        return BoolInstance(interpreter, len(self.instance.values) != 0)
+        return BoolInstance(interpreter).set_value(len(self.instance.values) != 0)
 
 
 class ListToString(BaseInternalMethod):
@@ -134,23 +154,19 @@ class ListToString(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
-        stringified = (self.instance.klass.interpreter.stringify(v, True) for v in self.instance.values)
-        return StringInstance(interpreter, f"{self.instance.klass.name}({", ".join(stringified)})")
+        stringified = (
+            self.instance.klass.interpreter.stringify(v, True)
+            for v in self.instance.values
+        )
+        return StringInstance(interpreter).set_value(
+            f"{self.instance.klass.name}({", ".join(stringified)})"
+        )
 
 
 class ListClass(BaseInternalClass):
     name = "List"
-
-    def upper_arity(self):
-        return float("inf")
-    
-    def call(self, interpreter, arguments):
-        return ListInstance(interpreter, *arguments)
-    
-
-class ListInstance(BaseInternalInstance):
-    CLASS = ListClass
-    FIELDS = [
+    FIELDS = (
+        ListInit,
         ListPush,
         ListGet,
         ListPop,
@@ -161,23 +177,38 @@ class ListInstance(BaseInternalInstance):
         ListEquals,
         ListIsTrue,
         ListToString,
-    ]
+    )
 
-    def __init__(self, interpreter,  *args):
+    @property
+    def instance_class(self):
+        return ListInstance
+
+    def upper_arity(self):
+        return float("inf")
+
+
+class ListInstance(BaseInternalInstance):
+    CLASS = ListClass
+
+    def __init__(self, interpreter):
         super().__init__(interpreter)
+        self.values = []
+
+    def set_values(self, *args):
         self.values = [*args]
-    
+        return self
+
     def __str__(self) -> str:
         return self.internal_find_method("toString").call(self.interpreter, [])
-    
+
     def extend(self, other_list):
         self.values.extend(other_list)
-    
+
     def __eq__(self, other):
         if not isinstance(other, ListInstance):
             return False
-        
+
         return self.values == other.values
-    
+
     def __hash__(self):
         return hash(str(self))

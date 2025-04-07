@@ -19,7 +19,7 @@ class TokenType(StrEnum):
     DOUBLE_SLASH = "DOUBLE_SLASH"
     STAR = "STAR"
     NEWLINE = "NEWLINE"
-    
+
     # One or two character tokens.
     BANG = "BANG"
     BANG_EQUAL = "BANG_EQUAL"
@@ -34,13 +34,13 @@ class TokenType(StrEnum):
     MINUS_EQUALS = "MINUS_EQUALS"
     STAR_EQUALS = "STAR_EQUALS"
     SLASH_EQUALS = "SLASH_EQUALS"
-    
+
     # Literals
     IDENTIFIER = "IDENTIFIER"
     STRING = "STRING"
     INT = "INT"
     FLOAT = "FLOAT"
-    
+
     # Keywords
     AND = "AND"
     CLASS = "CLASS"
@@ -58,5 +58,5 @@ class TokenType(StrEnum):
     TRUE = "TRUE"
     VAR = "VAR"
     WHILE = "WHILE"
-    
+
     EOF = "EOF"

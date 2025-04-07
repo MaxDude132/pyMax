@@ -26,7 +26,7 @@ class ExpressionVisitor:
 
     def visit_literal(self, expression: Literal):
         pass
-    
+
     def visit_logical(self, expression: Logical):
         pass
 
@@ -58,9 +58,9 @@ class ExpressionVisitor:
 @dataclass
 class Expression:
     def accept(self, visitor: ExpressionVisitor):
-        func = getattr(visitor, f'visit_{self.__class__.__name__.lower()}')
+        func = getattr(visitor, f"visit_{self.__class__.__name__.lower()}")
         return func(self)
-    
+
 
 @dataclass
 class Pair(Expression):
@@ -81,7 +81,7 @@ class Call(Expression):
     callee: Expression
     paren: Token
     arguments: list[Argument]
-    
+
 
 @dataclass
 class Get(Expression):
@@ -104,7 +104,7 @@ class Logical(Expression):
     left: Expression
     operator: Token
     right: Expression
-    
+
 
 @dataclass
 class Set(Expression):
@@ -158,7 +158,7 @@ class Parameter:
     type_: Token
     name: Token
     default: Expression | None = None
-    
+
 
 @dataclass
 class Argument(Expression):

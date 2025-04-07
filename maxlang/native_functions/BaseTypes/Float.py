@@ -1,5 +1,18 @@
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
 from maxlang.errors import InternalError
+
+
+class FloatInit(BaseInternalMethod):
+    name = "init"
+
+    def lower_arity(self):
+        return 1
+
+    def upper_arity(self):
+        return 1
+
+    def call(self, interpreter, arguments):
+        self.instance.set_value(arguments[0])
 
 
 class FloatAdd(BaseInternalMethod):
@@ -7,17 +20,21 @@ class FloatAdd(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        
-        if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(interpreter, self.instance.value + arguments[0].value)
+        from .Int import IntClass
 
-        raise InternalError(f"Cannot add {self.instance.class_name} and {arguments[0].class_name}")
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value + arguments[0].value
+            )
+
+        raise InternalError(
+            f"Cannot add {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatSubstract(BaseInternalMethod):
@@ -25,17 +42,21 @@ class FloatSubstract(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        
-        if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(interpreter, self.instance.value - arguments[0].value)
+        from .Int import IntClass
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value - arguments[0].value
+            )
+
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatMultiply(BaseInternalMethod):
@@ -43,17 +64,21 @@ class FloatMultiply(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        
-        if isinstance(arguments[0], (IntInstance, FloatInstance)):
-            return FloatInstance(interpreter, self.instance.value * arguments[0].value)
+        from .Int import IntClass
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
+            return FloatInstance(interpreter).set_value(
+                self.instance.value * arguments[0].value
+            )
+
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatDivide(BaseInternalMethod):
@@ -61,20 +86,24 @@ class FloatDivide(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        
-        if isinstance(arguments[0], (IntInstance, FloatInstance)):
+        from .Int import IntClass
+
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
             try:
-                return FloatInstance(interpreter, self.instance.value / arguments[0].value)
+                return FloatInstance(interpreter).set_value(
+                    self.instance.value / arguments[0].value
+                )
             except ZeroDivisionError:
                 raise InternalError("Attempted division by zero.")
 
-        raise InternalError(f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatEquals(BaseInternalMethod):
@@ -82,17 +111,21 @@ class FloatEquals(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        if isinstance(arguments[0], FloatInstance):
-            return BoolInstance(interpreter, self.instance.value == arguments[0].value)
+        if is_instance(interpreter, arguments[0], FloatClass.name):
+            return BoolInstance(interpreter).set_value(
+                self.instance.value == arguments[0].value
+            )
 
-        raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatGreaterThan(BaseInternalMethod):
@@ -100,24 +133,28 @@ class FloatGreaterThan(BaseInternalMethod):
 
     def lower_arity(self):
         return 1
-    
+
     def upper_arity(self):
         return 1
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        if isinstance(arguments[0], FloatInstance):
-            return BoolInstance(interpreter, self.instance.value > arguments[0].value)
+        if is_instance(interpreter, arguments[0], FloatClass.name):
+            return BoolInstance(interpreter).set_value(
+                self.instance.value > arguments[0].value
+            )
 
-        raise InternalError(f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}")
+        raise InternalError(
+            f"Cannot compare {self.instance.class_name} and {arguments[0].class_name}"
+        )
 
 
 class FloatNegate(BaseInternalMethod):
     name = "negate"
 
     def call(self, interpreter, arguments):
-        return FloatInstance(interpreter, -self.instance.value)
+        return FloatInstance(interpreter).set_value(-self.instance.value)
 
 
 class FloatToString(BaseInternalMethod):
@@ -126,7 +163,7 @@ class FloatToString(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
-        return StringInstance(interpreter, str(self.instance.value))
+        return StringInstance(interpreter).set_value(str(self.instance.value))
 
 
 class FloatIsTrue(BaseInternalMethod):
@@ -135,25 +172,13 @@ class FloatIsTrue(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
-        return BoolInstance(interpreter, self.instance.value != 0.0)
+        return BoolInstance(interpreter).set_value(self.instance.value != 0.0)
 
 
 class FloatClass(BaseInternalClass):
     name = "Float"
-
-    def lower_arity(self):
-        return 1
-    
-    def upper_arity(self):
-        return 1
-    
-    def call(self, interpreter, arguments):
-        return FloatInstance(interpreter, arguments[0])
-    
-
-class FloatInstance(BaseInternalInstance):
-    CLASS = FloatClass
     FIELDS = (
+        FloatInit,
         FloatAdd,
         FloatSubstract,
         FloatMultiply,
@@ -165,18 +190,36 @@ class FloatInstance(BaseInternalInstance):
         FloatToString,
     )
 
-    def __init__(self, interpreter, value: float):
+    @property
+    def instance_class(self):
+        return FloatInstance
+
+    def lower_arity(self):
+        return 1
+
+    def upper_arity(self):
+        return 1
+
+
+class FloatInstance(BaseInternalInstance):
+    CLASS = FloatClass
+
+    def __init__(self, interpreter):
         super().__init__(interpreter)
+        self.value = None
+
+    def set_value(self, value):
         self.value = value
-    
+        return self
+
     def __str__(self):
         return str(self.value)
-    
+
     def __eq__(self, other):
-        if not isinstance(other, FloatInstance):
+        if not is_instance(self.interpreter, other, FloatInstance):
             return False
-        
+
         return self.value == other.value
-    
+
     def __hash__(self):
         return hash(self.value)

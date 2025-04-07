@@ -16,6 +16,8 @@
 - implement isTrue (maybe find a better name in the future) -- DONE
 - allow passing arguments by name, store methods with their params and types to allow overrides -- DONE
 - write a test suite -- DONE
+- implement toInt, toFloat
+- implement type checking
 - improve error system with different error types, more complete error messages
 - implement addEquals
 - implement substractEquals
@@ -24,7 +26,6 @@
 - implement integer division between classes (//) through the int_divide method
 - implement modulo between classes (%) through the modulo method
 - implement exponentiation between classes (**) through the power method
-- implement type checking
 - look into implementing async syntax
 
 

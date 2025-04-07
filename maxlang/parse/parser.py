@@ -2,74 +2,106 @@ from typing import Callable
 
 from maxlang.lex import Token
 from maxlang.lex import TokenType
-from .expressions import Expression, Binary, Unary, Literal, Grouping, Variable, Assignment, Logical, Call, Lambda, Get, Set, Self, Super, Parameter, Pair, Argument
-from .statements import Statement, ExpressionStatement, VariableStatement, Block, IfStatement, WhileStatement, Function, ReturnStatement, Class, ForStatement
+from .expressions import (
+    Expression,
+    Binary,
+    Unary,
+    Literal,
+    Grouping,
+    Variable,
+    Assignment,
+    Logical,
+    Call,
+    Lambda,
+    Get,
+    Set,
+    Self,
+    Super,
+    Parameter,
+    Pair,
+    Argument,
+)
+from .statements import (
+    Statement,
+    ExpressionStatement,
+    VariableStatement,
+    Block,
+    IfStatement,
+    WhileStatement,
+    Function,
+    ReturnStatement,
+    Class,
+    ForStatement,
+)
 from maxlang.errors import ParserError
+from maxlang.native_functions import BUILTIN_TYPES
 
 
 class ParserControl:
-    def __init__(self, tokens: list[Token], error_callback: Callable[[Token, str], None]):
+    def __init__(
+        self, tokens: list[Token], error_callback: Callable[[Token, str], None]
+    ):
         self.tokens = tokens
         self.error_callback = error_callback
 
         self.current = 0
-    
+
     def match(self, *token_types: TokenType) -> bool:
         for token_type in token_types:
             if self.check(token_type):
                 self.advance()
                 return True
-            
+
         return False
-    
+
     def check(self, *token_types: TokenType) -> bool:
         if self.is_at_end():
             return False
-        
+
         return any(self.peek().type_ == type_ for type_ in token_types)
-    
+
     def check_next(self, *token_types: TokenType) -> bool:
         if self.is_at_end() or self.peek_next().type_ == TokenType.EOF:
             return False
-        
+
         return any(self.peek_next().type_ == type_ for type_ in token_types)
-    
+
     def advance(self) -> Token:
         if not self.is_at_end():
             self.current += 1
         return self.previous()
-    
+
     def is_at_end(self) -> bool:
         return self.peek().type_ == TokenType.EOF
-    
+
     def peek(self) -> Token:
         return self.tokens[self.current]
-    
+
     def peek_next(self) -> Token:
         i = 1
         while True:
-            token = self.tokens[self.current+i]
+            token = self.tokens[self.current + i]
             if token.type_ is not TokenType.NEWLINE:
                 return token
             i += 1
 
     def previous(self) -> Token:
-        return self.tokens[self.current-1]
-    
+        return self.tokens[self.current - 1]
+
     def consume(self, token_type: TokenType, message: str) -> Token:
         if self.check(token_type):
             return self.advance()
-        
+
         raise self.error(self.peek(), message)
-    
+
     def error(self, token: Token, message: str):
         self.error_callback(token, message)
         return ParserError(message)
-    
+
     def skip_newlines(self):
         while self.match(TokenType.NEWLINE):
             pass
-    
+
     def synchronize(self):
         self.advance()
 
@@ -83,10 +115,12 @@ class ParserControl:
                 TokenType.RETURN,
             ):
                 return
-            
-            if self.check(TokenType.IDENTIFIER) and self.check_next(TokenType.COLON, TokenType.LEFT_BRACE):
+
+            if self.check(TokenType.IDENTIFIER) and self.check_next(
+                TokenType.COLON, TokenType.LEFT_BRACE
+            ):
                 return
-            
+
             self.advance()
 
 
@@ -94,7 +128,7 @@ class ExpressionsParser(ParserControl):
     def expression(self) -> Expression:
         self.skip_newlines()
         return self.assignment()
-    
+
     def assignment(self) -> Expression:
         expression = self.or_expression()
 
@@ -108,11 +142,11 @@ class ExpressionsParser(ParserControl):
                 return Assignment(name, value)
             elif isinstance(expression, Get):
                 return Set(expression.obj, expression.name, value)
-            
+
             self.error(equals, "Invalid assignment target.")
 
         return expression
-    
+
     def or_expression(self) -> Expression:
         expression = self.and_expression()
 
@@ -122,7 +156,7 @@ class ExpressionsParser(ParserControl):
             expression = Logical(expression, operator, right)
 
         return expression
-    
+
     def and_expression(self) -> Expression:
         expression = self.equality()
 
@@ -132,7 +166,7 @@ class ExpressionsParser(ParserControl):
             expression = Logical(expression, operator, right)
 
         return expression
-    
+
     def equality(self) -> Expression:
         expression = self.comparison()
 
@@ -142,29 +176,32 @@ class ExpressionsParser(ParserControl):
             expression = Binary(expression, operator, right)
 
         return expression
-    
+
     def comparison(self) -> Expression:
         expression = self.pair()
 
         while self.match(
-            TokenType.GREATER, TokenType.GREATER_EQUAL, TokenType.LESS, TokenType.LESS_EQUAL
+            TokenType.GREATER,
+            TokenType.GREATER_EQUAL,
+            TokenType.LESS,
+            TokenType.LESS_EQUAL,
         ):
             operator = self.previous()
             right = self.pair()
             expression = Binary(expression, operator, right)
 
         return expression
-    
+
     def pair(self) -> Expression:
         expression = self.term()
-        
+
         while self.match(TokenType.RIGHT_ARROW):
             operator = self.previous()
             right = self.term()
             expression = Pair(expression, operator, right)
 
         return expression
-    
+
     def term(self) -> Expression:
         expression = self.factor()
 
@@ -174,7 +211,7 @@ class ExpressionsParser(ParserControl):
             expression = Binary(expression, operator, right)
 
         return expression
-    
+
     def factor(self) -> Expression:
         expression = self.unary()
 
@@ -184,15 +221,15 @@ class ExpressionsParser(ParserControl):
             expression = Binary(expression, operator, right)
 
         return expression
-    
+
     def unary(self) -> Expression:
         if self.match(TokenType.BANG, TokenType.MINUS):
             operator = self.previous()
             right = self.unary()
             return Unary(operator, right)
-        
+
         return self.call()
-    
+
     def call(self) -> Expression:
         expression = self.primary()
 
@@ -200,13 +237,15 @@ class ExpressionsParser(ParserControl):
             if self.match(TokenType.LEFT_PAREN):
                 expression = self.finish_call(expression)
             elif self.match(TokenType.DOT):
-                name = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                name = self.consume(
+                    TokenType.IDENTIFIER, "Expect property name after '.'."
+                )
                 expression = Get(expression, name)
             else:
                 break
 
         return expression
-    
+
     def primary(self) -> Expression:
         if self.match(TokenType.FALSE):
             return Literal(False)
@@ -214,35 +253,37 @@ class ExpressionsParser(ParserControl):
             return Literal(True)
         if self.match(TokenType.NULL):
             return Literal(None)
-        
+
         if self.match(TokenType.SUPER):
             keyword = self.previous()
             method = None
             if self.match(TokenType.DOT):
-                method = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+                method = self.consume(
+                    TokenType.IDENTIFIER, "Expect superclass method name."
+                )
             return Super(keyword, method)
-        
+
         if self.match(TokenType.FLOAT, TokenType.STRING, TokenType.INT):
             return Literal(self.previous().literal)
-        
+
         if self.match(TokenType.SELF):
             return Self(self.previous())
-        
+
         if self.match(TokenType.LAMBDA):
             return self.function_body("lambda")
-        
+
         if self.match(TokenType.IDENTIFIER):
             return Variable(self.previous())
-        
+
         if self.match(TokenType.LEFT_PAREN):
             self.skip_newlines()
             expression = self.expression()
             self.skip_newlines()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expression)
-        
+
         raise self.error(self.peek(), "Expect expression.")
-    
+
     def finish_call(self, expression: Expression):
         arguments: list[Expression] = []
 
@@ -259,7 +300,10 @@ class ExpressionsParser(ParserControl):
                     has_named_arg = True
                 else:
                     if has_named_arg:
-                        raise self.error(self.previous(), "Cannot call with an unnamed argument after a named argument.")
+                        raise self.error(
+                            self.previous(),
+                            "Cannot call with an unnamed argument after a named argument.",
+                        )
 
                     argument = Argument(None, name_or_arg)
                 arguments.append(argument)
@@ -270,7 +314,7 @@ class ExpressionsParser(ParserControl):
         self.skip_newlines()
         paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
         return Call(expression, paren, arguments)
-    
+
     def function_body(self, kind: str):
         parameters: list[Parameter] = []
         self.skip_newlines()
@@ -287,18 +331,23 @@ class ExpressionsParser(ParserControl):
                     has_had_default = True
 
                 if has_had_default and default is None:
-                    raise self.error(name, "Cannot set a parameter without a default value after a parameter with a default value.")
+                    raise self.error(
+                        name,
+                        "Cannot set a parameter without a default value after a parameter with a default value.",
+                    )
 
                 parameters.append(Parameter(type_, name, default))
                 self.skip_newlines()
-                if not self.match(TokenType.COMMA) or self.check_next(TokenType.LEFT_BRACE):
+                if not self.match(TokenType.COMMA) or self.check_next(
+                    TokenType.LEFT_BRACE
+                ):
                     break
 
         self.skip_newlines()
         self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
         body = self.block()
         return Lambda(parameters, body)
-    
+
 
 class StatementsParser(ExpressionsParser):
     def declaration(self) -> Statement:
@@ -306,10 +355,11 @@ class StatementsParser(ExpressionsParser):
             if self.match(TokenType.CLASS):
                 return self.class_declaration()
             if self.check(TokenType.IDENTIFIER) and (
-                self.check_next(TokenType.LEFT_BRACE) or self.check_next(TokenType.COLON)
+                self.check_next(TokenType.LEFT_BRACE)
+                or self.check_next(TokenType.COLON)
             ):
                 return self.function("function")
-            
+
             return self.statement()
         except ParserError:
             self.synchronize()
@@ -317,13 +367,25 @@ class StatementsParser(ExpressionsParser):
     def class_declaration(self) -> Class:
         name = self.consume(TokenType.IDENTIFIER, "Expect class name.")
 
+        if name.lexeme in BUILTIN_TYPES:
+            raise self.error(
+                name, "Cannot create a class with the same name as a builtin type."
+            )
+
         superclasses: list[Variable] = []
+        builtin_in_superclasses = False
         if self.match(TokenType.COLON):
             while True:
-                self.consume(TokenType.IDENTIFIER, "Expect superclass name.")
-                superclasses.append(
-                    Variable(self.previous())
+                superclass_name = self.consume(
+                    TokenType.IDENTIFIER, "Expect superclass name."
                 )
+                if superclass_name.lexeme in BUILTIN_TYPES:
+                    if builtin_in_superclasses:
+                        raise self.error(
+                            superclass_name, "Can only inherit from one builtin type."
+                        )
+                    builtin_in_superclasses = True
+                superclasses.append(Variable(self.previous()))
                 if not self.match(TokenType.COMMA):
                     break
 
@@ -348,7 +410,7 @@ class StatementsParser(ExpressionsParser):
 
     def var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
-        
+
         initializer: Expression | None = None
         if self.match(TokenType.EQUAL):
             initializer = self.expression()
@@ -367,9 +429,9 @@ class StatementsParser(ExpressionsParser):
             return Block(self.block())
         if self.match(TokenType.IF):
             return self.if_statement()
-        
+
         return self.expression_statement()
-    
+
     def return_statement(self) -> Statement:
         keyword = self.previous()
         value = None
@@ -378,7 +440,7 @@ class StatementsParser(ExpressionsParser):
 
         self.consume(TokenType.NEWLINE, "Expect '\\n' after return value.")
         return ReturnStatement(keyword, value)
-    
+
     def for_statement(self) -> Statement:
         keyword = self.previous()
         for_name = self.inline_var_declaration()
@@ -388,7 +450,7 @@ class StatementsParser(ExpressionsParser):
         body = self.block()
 
         return ForStatement(keyword, for_name, in_name, body)
-    
+
     def inline_var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
         return VariableStatement(name, None)
@@ -398,7 +460,7 @@ class StatementsParser(ExpressionsParser):
         body = self.statement()
 
         return WhileStatement(condition, body)
-    
+
     def block(self) -> list[Statement]:
         statements: list[Statement] = []
 
@@ -409,7 +471,7 @@ class StatementsParser(ExpressionsParser):
 
         self.consume(TokenType.RIGHT_BRACE, "Expect '}' after block.")
         return statements
-    
+
     def if_statement(self) -> Statement:
         keyword = self.previous()
         condition = self.expression()
@@ -419,14 +481,12 @@ class StatementsParser(ExpressionsParser):
         if self.match(TokenType.ELSE):
             else_branch = self.statement()
 
-        return IfStatement(
-            condition, then_branch, else_branch, keyword
-        )
-    
+        return IfStatement(condition, then_branch, else_branch, keyword)
+
     def expression_statement(self) -> Statement:
         expression = self.expression()
         return ExpressionStatement(expression)
-    
+
 
 class Parser(StatementsParser):
     def parse(self) -> list[Statement]:
@@ -435,6 +495,5 @@ class Parser(StatementsParser):
             self.skip_newlines()
             statements.append(self.declaration())
             self.skip_newlines()
-            
+
         return statements
-        
