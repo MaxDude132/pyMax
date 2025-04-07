@@ -192,7 +192,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
     def visit_super(self, expression):
         distance = self.locals.get(expression)
-        superclass: ClassCallable = self.environment.get_at(distance, "super")
+        superclasses: ClassCallable = self.environment.get_at(distance, "super")
         obj: InstanceCallable = self.environment.get_at(distance - 1, "self")
 
         if expression.method:
@@ -213,15 +213,15 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
                 )
             )
 
-        method = superclass.find_method(method_name, check_supers=False)
+        for superclass in superclasses:
+            method = superclass.find_method(method_name, check_supers=False)
+            if method is not None:
+                return method.bind(obj)
 
-        if method is None:
-            raise InterpreterError(
-                method_name,
-                f"'{method_name.lexeme}' not found in superclasses of {obj}.",
-            )
-
-        return method.bind(obj)
+        raise InterpreterError(
+            method_name,
+            f"'{method_name.lexeme}' not found in superclasses of {obj}.",
+        )
 
     def visit_self(self, expression):
         return self.look_up_variable(expression.keyword, expression)
@@ -328,17 +328,14 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         superclasses: list[Any] = []
         for superclass in statement.superclasses:
             eval_superclass = self.evaluate(superclass)
-            # if not isinstance(eval_superclass, ClassCallable):
-            #     raise InterpreterError(superclass.name, "Superclass must be a user-defined class.")
             superclasses.append(eval_superclass)
 
         self.environment.define(statement.name)
+        self.environment = Environment(self.environment)
 
-        for superclass in superclasses:
-            self.environment = Environment(self.environment)
-            self.environment.define(
-                Token(TokenType.IDENTIFIER, "super", None, -1), superclass
-            )
+        self.environment.define(
+            Token(TokenType.IDENTIFIER, "super", None, -1), superclasses
+        )
 
         methods: dict[str, FunctionCallable] = {}
         for method in statement.methods:
@@ -347,9 +344,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
 
         klass = ClassCallable(statement.name, superclasses, methods)
 
-        for superclass in statement.superclasses:
-            self.environment = self.environment.enclosing
-
+        self.environment = self.environment.enclosing
         self.environment.assign(statement.name, klass)
 
     def visit_variable_statement(self, statement):

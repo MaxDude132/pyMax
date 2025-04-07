@@ -1,8 +1,26 @@
-class MyString: String {
+-*class MyString: String {
     init: String value {
         super(value)
     }
 }
 
 --print(MyString("test") == "test")
-print(1.0 + 1.0)
+*-
+class First {
+}
+
+class Second {
+    init: String value {
+        self.value = value
+    }
+}
+
+class Third: First, Second {
+    init: String value {
+        print(value)
+        super(value)
+    }
+}
+
+third = Third("test")
+print(third.value)

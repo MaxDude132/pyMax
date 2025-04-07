@@ -46,10 +46,8 @@ class Resolver(ExpressionVisitor, StatementVisitor):
                 )
         self.resolve_many(statement.superclasses)
 
-        for superclass in statement.superclasses:
-            self.begin_scope()
-            self.scopes[-1]["super"] = True
-
+        self.begin_scope()
+        self.scopes[-1]["super"] = True
         self.begin_scope()
         self.scopes[-1]["self"] = True
 
@@ -60,9 +58,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.resolve_function(method.function, declaration)
 
         self.end_scope()
-
-        for superclass in statement.superclasses:
-            self.end_scope()
+        self.end_scope()
 
         self.current_class = enclosing_class
 
