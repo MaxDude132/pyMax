@@ -204,7 +204,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         else:
             method_name = (
                 self.current_call.name
-                if isinstance(self.current_call, Token)
+                if isinstance(self.current_call.name, Token)
                 else Token(
                     TokenType.IDENTIFIER,
                     self.current_call.name,

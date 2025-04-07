@@ -54,4 +54,30 @@ class Third: First, Second {
 third = Third("test")
 print(third.value)
 """) == "test"
+
+
+def test_super_chained_inheritance():
+    # Skips the first, gets to the second
+    assert run_source("""
+class First {    
+    init: String value {
+        self.value = value                  
+    }   
+}
+                      
+class Second: First {
+    init: String value {
+        super(value)                  
+    }
+}
+                      
+class Third: Second {
+    init: String value {
+        super(value)                  
+    }
+}
+                      
+third = Third("test")
+print(third.value)
+""") == "test"
     
