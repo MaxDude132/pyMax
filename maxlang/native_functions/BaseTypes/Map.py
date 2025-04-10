@@ -29,10 +29,14 @@ class MapPush(BaseInternalMethod):
         return 2
 
     def call(self, interpreter, arguments):
-        if is_instance(interpreter, arguments[0], PairClass.name):
-            self.instance.values[arguments[0].first] = arguments[0].second
-        else:
-            self.instance.values[arguments[0]] = arguments[1]
+        try:
+            if is_instance(interpreter, arguments[0], PairClass.name):
+                self.instance.values[arguments[0].first] = arguments[0].second
+            else:
+                self.instance.values[arguments[0]] = arguments[1]
+        except (AttributeError, IndexError):
+            raise InternalError(f"Invalid value passed to {self.class_name}.")
+
 
 
 class MapGet(BaseInternalMethod):
@@ -49,7 +53,7 @@ class MapGet(BaseInternalMethod):
             return self.instance.values[arguments[0]]
         except KeyError:
             raise InternalError(
-                f"Could not find key {arguments[0]} in {MapClass.name}."
+                f"Could not find key {arguments[0]} in {self.instance.class_name}."
             )
 
 
@@ -75,9 +79,15 @@ class MapRemove(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        return PairInstance(interpreter).set_values(
-            arguments[0], self.instance.values.pop(arguments[0])
-        )
+        try:
+            return PairInstance(interpreter).set_values(
+                arguments[0], self.instance.values.pop(arguments[0])
+            )
+        except KeyError:
+            raise InternalError(
+                f"Could not find key {arguments[0]} in {self.instance.class_name}."
+            )
+
 
 
 class MapAdd(BaseInternalMethod):
@@ -178,11 +188,15 @@ class MapInstance(BaseInternalInstance):
         self.values = {}
 
     def set_values(self, *args: PairInstance):
-        self.values = {arg.first: arg.second for arg in args}
+        for arg in args:
+            if not is_instance(self.interpreter, arg, PairClass.name):
+                raise InternalError(f"Invalid value passed to {self.class_name}.")
+            self.values[arg.first] = arg.second
+
         return self
 
     def __str__(self) -> str:
-        return self.internal_find_method("toString").call(self.klass.interpreter, [])
+        return self.internal_find_method("toString").call(self.klass.interpreter, []).value
 
     def __iter__(self):
         return iter(self.get_pairs())
@@ -208,4 +222,4 @@ class MapInstance(BaseInternalInstance):
         return self.values == other.values
 
     def __hash__(self):
-        return hash(str(self))
+        return hash(id(self))

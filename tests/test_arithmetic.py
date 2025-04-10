@@ -23,14 +23,14 @@ def test_addition():
     )
     assert (
         run_source("print(Map(1 -> 'test') + Map(2 -> 'test2'))")
-        == "Map(1 -> test, 2 -> test2)"
+        == "Map(1 -> \"test\", 2 -> \"test2\")"
     )
     assert run_source("print(Map(1 -> 'test') + 2 -> 'test2')") == formatted_error(
         "Can only add maps or pairs to maps.", 1
     )  # Addition has priority over pair
     assert (
         run_source("print(Map(1 -> 'test') + (2 -> 'test2'))")
-        == "Map(1 -> test, 2 -> test2)"
+        == "Map(1 -> \"test\", 2 -> \"test2\")"
     )
 
 

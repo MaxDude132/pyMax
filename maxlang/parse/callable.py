@@ -189,7 +189,7 @@ class InstanceCallable(InternalCallable):
         self.fields: dict[str, InternalCallable] = {}
 
     def get(self, name: Token):
-        if name.lexeme in self.fields:
+        if name.lexeme in getattr(self, "fields", ()):
             return self.fields[name.lexeme]
 
         method = self.klass.find_method(name)

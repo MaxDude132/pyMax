@@ -16,8 +16,10 @@
 - implement isTrue (maybe find a better name in the future) -- DONE
 - allow passing arguments by name, store methods with their params and types to allow overrides -- DONE
 - write a test suite -- DONE
-- implement toInt, toFloat
 - implement type checking
+- add string formatting capabilities
+- implement toInt, toFloat
+- improve iterations to be lazily calulated instead of all at once
 - improve error system with different error types, more complete error messages
 - implement addEquals
 - implement substractEquals

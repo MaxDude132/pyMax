@@ -106,11 +106,7 @@ class IntDivide(BaseInternalMethod):
         from .Float import FloatInstance, FloatClass
 
         try:
-            if is_instance(interpreter, arguments[0], IntClass.name):
-                return IntInstance(interpreter).set_value(
-                    self.instance.value / arguments[0].value
-                )
-            if is_instance(interpreter, arguments[0], FloatClass.name):
+            if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
                 return FloatInstance(interpreter).set_value(
                     self.instance.value / arguments[0].value
                 )
@@ -225,7 +221,25 @@ class IntInstance(BaseInternalInstance):
         self.value = None
 
     def set_value(self, value):
-        self.value = value
+        from .Float import FloatClass
+        from .String import StringClass
+
+        if isinstance(value, float):
+            self.value = int(value)
+        elif isinstance(value, int):
+            self.value = value
+        elif is_instance(self.interpreter, value, FloatClass.name):
+            self.value = int(value.value)
+        elif is_instance(self.interpreter, value, IntClass.name):
+            self.value = value.value
+        elif is_instance(self.interpreter, value, StringClass.name):
+            try:
+                self.value = int(value.value)
+            except ValueError:
+                raise InternalError(f"Invalid value passed to {self.class_name}.")
+        else:
+            raise InternalError(f"Invalid value passed to {self.class_name}.")
+
         return self
 
     def __str__(self):

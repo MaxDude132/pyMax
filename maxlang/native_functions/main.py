@@ -69,11 +69,16 @@ class BaseInternalAttribute(InternalCallable):
     def get_class(self):
         return self.instance.klass
 
+    @classmethod
+    def bind(cls, instance: BaseInternalClass):
+        attribute = cls(instance)
+        return attribute.call(attribute.instance.interpreter, [])
+
     def __init__(self, instance: BaseInternalClass):
         self.instance = instance
 
     def __str__(self):
-        return f"<attribute '{self.name.lexeme}' of class '{self.instance.name}'>"
+        return f"<attribute '{self.name.lexeme}' of {self.instance.klass.class_name}>"
 
 
 # Methods shared by all class instances
@@ -187,7 +192,7 @@ class BaseInternalInstance(InstanceCallable):
         return self.klass
 
 
-def is_instance(interpreter: Interpreter, instance: InstanceCallable, *class_names: str) -> bool:
+def is_instance(interpreter: Interpreter, instance: InstanceCallable, *class_names: Token) -> bool:
     for class_name in class_names:
         klass = interpreter.environment.get(class_name)
         val = instance.internal_find_method("isInstance").call(

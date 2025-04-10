@@ -16,6 +16,7 @@ from maxlang.native_functions.main import BaseInternalInstance
 from maxlang.native_functions.next import NEXT_SENTINEL
 from maxlang.native_functions.BaseTypes.Pair import PairInstance
 from maxlang.native_functions.BaseTypes.Bool import BoolInstance
+from maxlang.native_functions.BaseTypes.String import StringInstance
 from maxlang.errors import InterpreterError, InternalError
 
 
@@ -151,7 +152,10 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
     def visit_literal(self, expression):
         klass = self.get_class(expression.type_.klass.name)
-        return klass.instance_class(self).set_value(expression.value)
+        try:
+            return klass.instance_class(self).set_value(expression.value)
+        except InternalError as e:
+            self.interpreter_error(InterpreterError(expression.type_.token, str(e)))
 
     def visit_grouping(self, expression):
         return self.evaluate(expression.expression)
@@ -304,7 +308,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         if obj is None:
             return "null"
 
-        if isinstance(obj, str):
+        if isinstance(obj, StringInstance):
             return f'"{obj}"' if keep_string_quotes else obj
 
         if isinstance(obj, InternalCallable):

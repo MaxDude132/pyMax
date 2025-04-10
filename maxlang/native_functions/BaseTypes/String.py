@@ -138,6 +138,7 @@ class StringInstance(BaseInternalInstance):
         self.value = None
 
     def set_value(self, value):
+        value = self.interpreter.stringify(value)
         return set_value(self, value)
 
     def __str__(self):

@@ -453,6 +453,9 @@ class StatementsParser(ExpressionsParser):
         if not self.check(TokenType.NEWLINE):
             value = self.expression()
 
+        if self.previous().type_ != TokenType.NEWLINE:
+            raise self.error(self.previous(), "Expect '\\n' after return statement.")
+
         return ReturnStatement(keyword, value)
 
     def for_statement(self) -> Statement:

@@ -61,10 +61,8 @@ class PairToString(BaseInternalMethod):
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
-        stringified = f"{self.instance.class_name}({interpreter.stringify(self.instance.first, True)}, {interpreter.stringify(self.instance.second, True)})"
-        return StringInstance(interpreter).set_value(
-            f"{self.class_name}({stringified})"
-        )
+        stringified = f"{self.instance.klass.name.lexeme}({interpreter.stringify(self.instance.first, True)}, {interpreter.stringify(self.instance.second, True)})"
+        return StringInstance(interpreter).set_value(stringified)
 
 
 class PairClass(BaseInternalClass):

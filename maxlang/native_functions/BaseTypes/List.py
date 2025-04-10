@@ -33,7 +33,12 @@ class ListPop(BaseInternalMethod):
     name = make_internal_token("pop")
 
     def call(self, interpreter, arguments):
-        return self.instance.values.pop()
+        try:
+            return self.instance.values.pop()
+        except IndexError:
+            raise InternalError(
+                f"No more items in {self.instance.class_name}."
+            )
 
 
 class ListGet(BaseInternalMethod):
@@ -46,7 +51,12 @@ class ListGet(BaseInternalMethod):
         return 1
 
     def call(self, interpreter, arguments):
-        return self.instance.values[int(arguments[0])]
+        try:
+            return self.instance.values[int(arguments[0].value)]
+        except (ValueError, IndexError, TypeError, AttributeError):
+            raise InternalError(
+                f"{arguments[0]} is not a valid index."
+            )
 
 
 class ListExtend(BaseInternalMethod):

@@ -1,5 +1,12 @@
-test {
-    return ("test" -> "other_test")
+class Tester {
+    init: String value {
+        self.value = value
+    }
+    toString {
+        return self.value
+    }
 }
 
-print(test())
+tester = Tester("test")
+test = Map(tester -> "test", Tester("test2") -> "other_test")
+print(test)

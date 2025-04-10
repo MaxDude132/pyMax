@@ -1,0 +1,70 @@
+from ..main import run_source, formatted_error
+
+
+def test_toString():
+    assert run_source("print(List().toString())") == "List()"
+    assert run_source("print(List(1,2,3).toString())") == "List(1, 2, 3)"
+
+
+def test_init():
+    assert run_source("print(List(true))") == "List(true)"
+    assert run_source("print(List(1))") == "List(1)"
+    assert run_source("print(List(List(1)))") == "List(List(1))"
+    assert run_source("print(List(1,2))") == "List(1, 2)"
+    assert run_source("print(List(Float('1.3')))") == "List(1.3)"
+
+
+def test_equals():
+    assert run_source("print(List(1).equals(List(1)))") == "true"
+    assert run_source("print(List(1).equals(List(2)))") == "false"
+    assert run_source("print(List(1).equals(1.0))") == formatted_error("Cannot compare <List> and <Float>", 1)
+
+
+def test_is_true():
+    assert run_source("print(List(1).isTrue())") == "true"
+    assert run_source("print(List().isTrue())") == "false"
+
+
+def test_add():
+    assert run_source("print(List(1).add(List(2)))") == "List(1, 2)"
+    assert run_source("print(List(1).add(true))") == formatted_error("Can only add a List to a List. Use the push method to add items to a List.", 1)
+
+
+def test_push():
+    assert run_source("""
+test = List(1)
+test.push(List(2))
+print(test)
+""") == "List(1, List(2))"
+    assert run_source("""
+test = List(1)
+test.push(true)
+print(test)
+""") == "List(1, true)"
+
+
+def test_pop():
+    assert run_source("print(List(1).pop())") == "1"
+    assert run_source("print(List().pop())") == formatted_error("No more items in <List>.", 1)
+
+
+def test_get():
+    assert run_source("print(List(1).get(0))") == "1"
+    assert run_source("print(List(1).get(1))") == formatted_error("1 is not a valid index.", 1)
+
+
+def test_extend():
+    assert run_source("""
+test = List(1)
+test.extend(List(2))
+print(test)
+""") == "List(1, 2)"
+    assert run_source("""
+test = List(1)
+test.extend(true)
+print(test)
+""") == formatted_error("Can only extend a List with another list. Use push to add an item to a List.", 3)
+
+
+def test_iterate():
+    assert run_source("print(List(1, 2).iterate())") == "<Next>(1, <Next>(2, <Next>(NEXT_SENTINEL, NEXT_SENTINEL)))"

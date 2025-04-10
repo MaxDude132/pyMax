@@ -209,14 +209,32 @@ class FloatInstance(BaseInternalInstance):
         self.value = None
 
     def set_value(self, value):
-        self.value = value
+        from .Int import IntClass
+        from .String import StringClass
+
+        if isinstance(value, float):
+            self.value = value
+        elif isinstance(value, int):
+            self.value = float(value)
+        elif is_instance(self.interpreter, value, FloatClass.name):
+            self.value = value.value
+        elif is_instance(self.interpreter, value, IntClass.name):
+            self.value = float(value.value)
+        elif is_instance(self.interpreter, value, StringClass.name):
+            try:
+                self.value = float(value.value)
+            except ValueError:
+                raise InternalError(f"Invalid value passed to {self.class_name}.")
+        else:
+            raise InternalError(f"Invalid value passed to {self.class_name}.")
+
         return self
 
     def __str__(self):
         return str(self.value)
 
     def __eq__(self, other):
-        if not is_instance(self.interpreter, other, FloatInstance):
+        if not is_instance(self.interpreter, other, FloatClass.name):
             return False
 
         return self.value == other.value

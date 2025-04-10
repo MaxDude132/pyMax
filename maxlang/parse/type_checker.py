@@ -39,7 +39,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             if name.lexeme in variables:
                 return variables[name.lexeme]
             
-        self.parser_error(name, f"Undefined variable {name.lexeme}.")
+        self.parser_error(name, f"Undefined variable '{name.lexeme}'.")
 
     def validate_type(self, value: Type, expected: Token):
         if value is None:
@@ -147,7 +147,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         callee_type = self.check(expression.callee)
         if callee_type is None:
             try:
-                callee_type = self.get_type(expression.callee.name)
+                callee_type = self.get_type(expression.callee.name, False)
                 expression.callee.type_ = callee_type
             except AttributeError:
                 pass
