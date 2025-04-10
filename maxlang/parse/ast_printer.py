@@ -72,6 +72,13 @@ class AstPrinter(Visitor):
 
         return string
 
+    def visit_if_expression(self, expression):
+        string = self.parenthesize("if", expression.condition)
+        string += "\n" + self.parenthesize("then", expression.then_branch)
+        string += "\n" + self.parenthesize("else", expression.else_branch)
+
+        return string
+
     def visit_while_statement(self, statement):
         return self.parenthesize("while", statement.condition, statement.body)
 

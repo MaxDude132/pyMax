@@ -273,6 +273,23 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return PairInstance(self).set_values(
             self.evaluate(expression.left), self.evaluate(expression.right)
         )
+    
+    def visit_if_expression(self, expression):
+        isTrue = self.evaluate(expression.condition)
+
+        if not isinstance(isTrue, BoolInstance):
+            try:
+                isTrue = isTrue.internal_find_method("isTrue").call(self, [])
+            except KeyError:
+                raise InterpreterError(
+                    expression.keyword,
+                    f"class {isTrue.class_name} does not implement the isTrue method.",
+                )
+
+        if isTrue.value:
+            return self.evaluate(expression.then_branch)
+        else:
+            return self.evaluate(expression.else_branch)
 
     def evaluate(self, expression: Expression):
         return expression.accept(self)

@@ -270,3 +270,15 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
     
     def visit_return_statement(self, statement):
         return self.check(statement.value)
+    
+    def visit_if_expression(self, expression):
+        then_type = self.check(expression.then_branch)
+        else_type = self.check(expression.else_branch)
+
+        try:
+            return self.get_common_type(then_type, else_type)
+        except TypeError:
+            previous_type_name = then_type.klass.name.lexeme
+            new_type_name = else_type.klass.name.lexeme
+            self.parser_error(expression.keyword, f"Got different return types in if expression: {previous_type_name} and {new_type_name}.")
+

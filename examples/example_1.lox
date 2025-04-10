@@ -1,7 +1,5 @@
-class Tester {
-    init: String test {
-        self.test = test
-    }
+test {
+    return ("test" -> "other_test")
 }
 
-test = Tester("test")("test")
+print(test())

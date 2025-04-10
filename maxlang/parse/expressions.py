@@ -56,6 +56,9 @@ class ExpressionVisitor:
     def visit_argument(self, expression: Argument):
         pass
 
+    def visit_if_expression(self, expression: IfExpression):
+        pass
+
 
 @dataclass
 class Type:
@@ -69,7 +72,11 @@ class Type:
 @dataclass
 class Expression:
     def accept(self, visitor: ExpressionVisitor):
-        func = getattr(visitor, f"visit_{self.__class__.__name__.lower()}")
+        class_name = "".join(
+            "_" + char.lower() if char.isupper() else char
+            for char in self.__class__.__name__
+        ).lstrip("_")
+        func = getattr(visitor, f"visit_{class_name}")
         return func(self)
 
 
@@ -184,3 +191,11 @@ class Lambda(Expression):
     token: Token
     params: list[Parameter]
     body: list[Statement]
+
+
+@dataclass
+class IfExpression(Expression):
+    condition: Expression
+    then_branch: Statement
+    else_branch: Statement
+    keyword: Token
