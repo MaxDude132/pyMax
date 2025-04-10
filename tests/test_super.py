@@ -11,6 +11,25 @@ class Test {
                       
 class OtherTest: Test {
     init: String value {
+        super.init(value)                  
+    }
+}
+                      
+other_test = OtherTest("test")
+print(other_test.value)
+""") == "test"
+
+
+def test_super_without_method():
+    assert run_source("""
+class Test {
+    init: String value {
+        self.value = value            
+    }                
+}
+                      
+class OtherTest: Test {
+    init: String value {
         super(value)                  
     }
 }

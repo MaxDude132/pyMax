@@ -28,6 +28,7 @@ class InternalCallable:
     def lower_arity(self) -> int:
         return 0
 
+    @property
     def parameters(self) -> list[Parameter]:
         return []
 
@@ -85,6 +86,7 @@ class FunctionCallable(InternalCallable):
         if self.class_instance is not None:
             return self.closure.get_at(0, "self")
 
+    @property
     def parameters(self):
         return self.declaration.params
 
@@ -94,7 +96,7 @@ class FunctionCallable(InternalCallable):
             return self.class_instance.class_name
 
     def __str__(self) -> str:
-        if self.class_instance is not None:
+        if self.class_instance is not None and self.name is not None:
             return f"<method {self.name.lexeme} of class {self.class_instance}>"
         elif self.name is not None:
             return f"<function {self.name.lexeme}>"
@@ -119,31 +121,32 @@ class ClassCallable(InternalCallable):
 
     def call(self, interpreter, arguments) -> InstanceCallable:
         instance = InstanceCallable(self)
-        initialiser = self.find_method(Token(None, "init", None, None))
+        initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is not None:
             initialiser.bind(instance).call(interpreter, arguments)
         return instance
 
     def check_arity(self, arg_count: int) -> bool:
-        initialiser = self.find_method(Token(None, "init", None, None))
+        initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is None:
             return arg_count == 0
         return initialiser.check_arity(arg_count)
 
     def upper_arity(self) -> int:
-        initialiser = self.find_method(Token(None, "init", None, None))
+        initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is None:
             return 0
         return initialiser.upper_arity()
 
     def lower_arity(self) -> int:
-        initialiser = self.find_method(Token(None, "init", None, None))
+        initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is None:
             return 0
         return initialiser.lower_arity()
 
+    @property
     def parameters(self):
-        initialiser = self.find_method(Token(None, "init", None, None))
+        initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is None:
             return []
         return initialiser.declaration.params
@@ -183,7 +186,7 @@ class ClassCallable(InternalCallable):
 class InstanceCallable(InternalCallable):
     def __init__(self, klass: ClassCallable):
         self.klass = klass
-        self.fields = {}
+        self.fields: dict[str, InternalCallable] = {}
 
     def get(self, name: Token):
         if name.lexeme in self.fields:

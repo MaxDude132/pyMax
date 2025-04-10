@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 
 
@@ -10,7 +10,7 @@ def set_value(instance: StringInstance, value: str):
 
 
 class StringInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 1
@@ -23,7 +23,7 @@ class StringInit(BaseInternalMethod):
 
 
 class StringAdd(BaseInternalMethod):
-    name = "add"
+    name = make_internal_token("add")
 
     def lower_arity(self):
         return 1
@@ -46,7 +46,7 @@ class StringAdd(BaseInternalMethod):
 
 
 class StringMultiply(BaseInternalMethod):
-    name = "multiply"
+    name = make_internal_token("multiply")
 
     def lower_arity(self):
         return 1
@@ -63,12 +63,12 @@ class StringMultiply(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class StringEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -90,7 +90,7 @@ class StringEquals(BaseInternalMethod):
 
 
 class StringIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -99,14 +99,14 @@ class StringIsTrue(BaseInternalMethod):
 
 
 class StringToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         return StringInstance(interpreter).set_value(self.instance.value)
 
 
 class StringClass(BaseInternalClass):
-    name = "String"
+    name = make_internal_token("String")
     FIELDS = (
         StringInit,
         StringAdd,

@@ -15,9 +15,6 @@ from maxlang.native_functions import NATIVE_FUNCTIONS
 from maxlang.native_functions.main import BaseInternalInstance
 from maxlang.native_functions.next import NEXT_SENTINEL
 from maxlang.native_functions.BaseTypes.Pair import PairInstance
-from maxlang.native_functions.BaseTypes.Int import IntInstance
-from maxlang.native_functions.BaseTypes.Float import FloatInstance
-from maxlang.native_functions.BaseTypes.String import StringInstance
 from maxlang.native_functions.BaseTypes.Bool import BoolInstance
 from maxlang.errors import InterpreterError, InternalError
 
@@ -29,8 +26,7 @@ class InterpreterBase:
 
         self.globals = Environment()
         for name, func in NATIVE_FUNCTIONS.items():
-            token = Token(TokenType.IDENTIFIER, name, None, -1)
-            self.globals.define(token, func(self))
+            self.globals.define(name, func(self))
 
         self.environment = self.globals
 
@@ -41,6 +37,9 @@ class InterpreterBase:
 
     def resolve(self, expression: Expression, depth: int):
         self.locals[expression] = depth
+
+    def get_class(self, name: Token):
+        return self.environment.get(name)
 
 
 class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
@@ -83,7 +82,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             method = left.internal_find_method(method_name)
             value = self.call(expression.operator, method, [right])
             return value
-        except (KeyError, AttributeError):
+        except (KeyError, AttributeError) as e:
             raise InterpreterError(
                 expression.operator,
                 f"{left.class_name} does not implement the {method_name} method.",
@@ -96,7 +95,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
     def build_arguments(self, callee: InternalCallable, arguments: list[Argument]):
         named_args = (arg for arg in arguments if arg.name is not None)
-        arguments_dict = {a.name.name.lexeme: a for a in named_args}
+        arguments_dict = {a.name.lexeme: a for a in named_args}
 
         args = []
         for argument in arguments:
@@ -106,7 +105,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             value = self.evaluate(argument.value)
             args.append(value)
 
-        for parameter in callee.parameters()[len(args) :]:
+        for parameter in callee.parameters[len(args) :]:
             argument = arguments_dict.get(parameter.name.lexeme)
             if argument is None and parameter.default is None:
                 raise InterpreterError(parameter.name, "Argument required in call.")
@@ -151,19 +150,8 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         raise InterpreterError(expression.name, "Only instances have properties.")
 
     def visit_literal(self, expression):
-        if isinstance(expression.value, bool):
-            return BoolInstance(self).set_value(expression.value)
-
-        if isinstance(expression.value, int):
-            return IntInstance(self).set_value(expression.value)
-
-        if isinstance(expression.value, float):
-            return FloatInstance(self).set_value(expression.value)
-
-        if isinstance(expression.value, str):
-            return StringInstance(self).set_value(expression.value)
-
-        return expression.value
+        klass = self.get_class(expression.type_.klass.name)
+        return klass.instance_class(self).set_value(expression.value)
 
     def visit_grouping(self, expression):
         return self.evaluate(expression.expression)
@@ -275,7 +263,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         if distance is not None:
             self.environment.assign_at(distance, expression.name, value)
         else:
-            self.globals.assign(expression.name, value)
+            self.globals.assign(expression.name.name, value)
         return value
 
     def visit_lambda(self, expression):

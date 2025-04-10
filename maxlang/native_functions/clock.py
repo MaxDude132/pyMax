@@ -1,10 +1,10 @@
-from .main import BaseInternalFunction
+from .main import BaseInternalFunction, make_internal_token
 
 import time
 
 
 class Clock(BaseInternalFunction):
-    name = "clock"
+    name = make_internal_token("clock")
 
     def check_arity(self, arg_count):
         return arg_count == 0

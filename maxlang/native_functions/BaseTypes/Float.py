@@ -1,9 +1,9 @@
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 
 
 class FloatInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 1
@@ -16,7 +16,7 @@ class FloatInit(BaseInternalMethod):
 
 
 class FloatAdd(BaseInternalMethod):
-    name = "add"
+    name = make_internal_token("add")
 
     def lower_arity(self):
         return 1
@@ -38,7 +38,7 @@ class FloatAdd(BaseInternalMethod):
 
 
 class FloatSubstract(BaseInternalMethod):
-    name = "substract"
+    name = make_internal_token("substract")
 
     def lower_arity(self):
         return 1
@@ -55,12 +55,12 @@ class FloatSubstract(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class FloatMultiply(BaseInternalMethod):
-    name = "multiply"
+    name = make_internal_token("multiply")
 
     def lower_arity(self):
         return 1
@@ -77,12 +77,12 @@ class FloatMultiply(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class FloatDivide(BaseInternalMethod):
-    name = "divide"
+    name = make_internal_token("divide")
 
     def lower_arity(self):
         return 1
@@ -102,12 +102,12 @@ class FloatDivide(BaseInternalMethod):
                 raise InternalError("Attempted division by zero.")
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class FloatEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -129,7 +129,7 @@ class FloatEquals(BaseInternalMethod):
 
 
 class FloatGreaterThan(BaseInternalMethod):
-    name = "greaterThan"
+    name = make_internal_token("greaterThan")
 
     def lower_arity(self):
         return 1
@@ -151,14 +151,14 @@ class FloatGreaterThan(BaseInternalMethod):
 
 
 class FloatNegate(BaseInternalMethod):
-    name = "negate"
+    name = make_internal_token("negate")
 
     def call(self, interpreter, arguments):
         return FloatInstance(interpreter).set_value(-self.instance.value)
 
 
 class FloatToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -167,7 +167,7 @@ class FloatToString(BaseInternalMethod):
 
 
 class FloatIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -176,7 +176,7 @@ class FloatIsTrue(BaseInternalMethod):
 
 
 class FloatClass(BaseInternalClass):
-    name = "Float"
+    name = make_internal_token("Float")
     FIELDS = (
         FloatInit,
         FloatAdd,

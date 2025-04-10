@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance
+from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from .Pair import PairInstance, PairClass
 from ..next import internal_next
 from maxlang.errors import InternalError
 
 
 class MapInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 0
@@ -20,7 +20,7 @@ class MapInit(BaseInternalMethod):
 
 
 class MapPush(BaseInternalMethod):
-    name = "push"
+    name = make_internal_token("push")
 
     def lower_arity(self):
         return 1
@@ -36,7 +36,7 @@ class MapPush(BaseInternalMethod):
 
 
 class MapGet(BaseInternalMethod):
-    name = "get"
+    name = make_internal_token("get")
 
     def lower_arity(self):
         return 1
@@ -54,7 +54,7 @@ class MapGet(BaseInternalMethod):
 
 
 class MapIterate(BaseInternalMethod):
-    name = "iterate"
+    name = make_internal_token("iterate")
 
     def call(self, interpreter, arguments):
         values = [
@@ -65,7 +65,7 @@ class MapIterate(BaseInternalMethod):
 
 
 class MapRemove(BaseInternalMethod):
-    name = "remove"
+    name = make_internal_token("remove")
     instance: MapInstance
 
     def lower_arity(self):
@@ -81,7 +81,7 @@ class MapRemove(BaseInternalMethod):
 
 
 class MapAdd(BaseInternalMethod):
-    name = "add"
+    name = make_internal_token("add")
     instance: MapInstance
 
     def lower_arity(self):
@@ -103,7 +103,7 @@ class MapAdd(BaseInternalMethod):
 
 
 class MapEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -123,7 +123,7 @@ class MapEquals(BaseInternalMethod):
 
 
 class MapIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -132,7 +132,7 @@ class MapIsTrue(BaseInternalMethod):
 
 
 class MapToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -144,12 +144,12 @@ class MapToString(BaseInternalMethod):
             for k, v in self.instance.values.items()
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
         )
 
 
 class MapClass(BaseInternalClass):
-    name = "Map"
+    name = make_internal_token("Map")
     FIELDS = (
         MapInit,
         MapPush,

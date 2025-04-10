@@ -1,10 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance
+from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from ..next import internal_next
 from maxlang.errors import InternalError
 
 
 class ListInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 0
@@ -17,7 +17,7 @@ class ListInit(BaseInternalMethod):
 
 
 class ListPush(BaseInternalMethod):
-    name = "push"
+    name = make_internal_token("push")
 
     def lower_arity(self):
         return 1
@@ -30,14 +30,14 @@ class ListPush(BaseInternalMethod):
 
 
 class ListPop(BaseInternalMethod):
-    name = "pop"
+    name = make_internal_token("pop")
 
     def call(self, interpreter, arguments):
         return self.instance.values.pop()
 
 
 class ListGet(BaseInternalMethod):
-    name = "get"
+    name = make_internal_token("get")
 
     def lower_arity(self):
         return 1
@@ -50,7 +50,7 @@ class ListGet(BaseInternalMethod):
 
 
 class ListExtend(BaseInternalMethod):
-    name = "extend"
+    name = make_internal_token("extend")
 
     def lower_arity(self):
         return 1
@@ -71,14 +71,14 @@ class ListExtend(BaseInternalMethod):
 
 
 class ListIterate(BaseInternalMethod):
-    name = "iterate"
+    name = make_internal_token("iterate")
 
     def call(self, interpreter, arguments):
         return internal_next(interpreter, self.instance.values)
 
 
 class ListAdd(BaseInternalMethod):
-    name = "add"
+    name = make_internal_token("add")
 
     def lower_arity(self):
         return 1
@@ -98,7 +98,7 @@ class ListAdd(BaseInternalMethod):
 
 
 class ListMultiply(BaseInternalMethod):
-    name = "multiply"
+    name = make_internal_token("multiply")
 
     def lower_arity(self):
         return 1
@@ -115,12 +115,12 @@ class ListMultiply(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class ListEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -140,7 +140,7 @@ class ListEquals(BaseInternalMethod):
 
 
 class ListIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -149,7 +149,7 @@ class ListIsTrue(BaseInternalMethod):
 
 
 class ListToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -159,12 +159,12 @@ class ListToString(BaseInternalMethod):
             for v in self.instance.values
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
         )
 
 
 class ListClass(BaseInternalClass):
-    name = "List"
+    name = make_internal_token("List")
     FIELDS = (
         ListInit,
         ListPush,

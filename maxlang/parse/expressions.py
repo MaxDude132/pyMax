@@ -1,11 +1,13 @@
 from __future__ import annotations
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
 
 from maxlang.lex.lexer import Token
 
 if TYPE_CHECKING:
     from .statements import Statement
+    from .callable import FunctionCallable, ClassCallable
+    from maxlang.native_functions.main import BaseInternalClass
 
 
 class ExpressionVisitor:
@@ -56,6 +58,15 @@ class ExpressionVisitor:
 
 
 @dataclass
+class Type:
+    klass: FunctionCallable | ClassCallable | type[BaseInternalClass]
+    token: Token
+    parameters: dict[str, Parameter] = field(default_factory=dict)
+    methods: dict[str, Type] = field(default_factory=dict)
+    return_type: Type | None = None
+
+
+@dataclass
 class Expression:
     def accept(self, visitor: ExpressionVisitor):
         func = getattr(visitor, f"visit_{self.__class__.__name__.lower()}")
@@ -78,7 +89,7 @@ class Binary(Expression):
 
 @dataclass
 class Call(Expression):
-    callee: Expression
+    callee: Variable
     paren: Token
     arguments: list[Argument]
 
@@ -97,6 +108,7 @@ class Grouping(Expression):
 @dataclass
 class Literal(Expression):
     value: Any
+    type_: Type
 
 
 @dataclass
@@ -139,6 +151,7 @@ class Unary(Expression):
 @dataclass
 class Variable(Expression):
     name: Token
+    type_: Type | None = None
 
     def __hash__(self):
         return id(self)
@@ -146,7 +159,7 @@ class Variable(Expression):
 
 @dataclass
 class Assignment(Expression):
-    name: Token
+    name: Variable
     value: Expression
 
     def __hash__(self):
@@ -162,11 +175,12 @@ class Parameter:
 
 @dataclass
 class Argument(Expression):
-    name: Variable | None
+    name: Token | None
     value: Expression
 
 
 @dataclass
 class Lambda(Expression):
+    token: Token
     params: list[Parameter]
     body: list[Statement]

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from maxlang.parse.callable import InternalCallable, ClassCallable, InstanceCallable
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Lambda
+from maxlang.lex import Token, TokenType
 
 if TYPE_CHECKING:
     from maxlang.parse.interpreter import Interpreter
@@ -13,8 +14,12 @@ def format_class_name(name: str):
     return f"<{name}>"
 
 
+def make_internal_token(string: str) -> Token:
+    return Token(TokenType.IDENTIFIER, string, None, -1)
+
+
 class BaseInternalFunction(InternalCallable):
-    name = ""
+    name: Token
 
     def __init__(self, interpreter):
         self.interpreter = interpreter
@@ -23,43 +28,43 @@ class BaseInternalFunction(InternalCallable):
 
     @property
     def declaration(self):
-        return Lambda([], [])
+        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), [], [])
 
 
 class BaseInternalMethod(InternalCallable):
-    name = ""
+    name: Token
 
     @property
     def declaration(self):
-        return Lambda([], [])
+        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), [], [])
 
     def get_class(self):
         return self.instance.klass
 
     @property
     def class_name(self):
-        return format_class_name(f"{self.get_class().name}.{self.name}")
+        return format_class_name(f"{self.get_class().name.lexeme}.{self.name.lexeme}")
 
     def return_self(self):
         return self.instance
 
     @classmethod
-    def bind(cls, instance: BaseInternalInstance):
+    def bind(cls, instance: BaseInternalClass):
         return cls(instance)
 
     def __init__(self, instance: BaseInternalClass):
         self.instance = instance
 
     def __str__(self):
-        return f"<method '{self.name}' of class '{self.instance.class_name}'>"
+        return f"<method '{self.name.lexeme}' of class '{self.instance.class_name}'>"
 
 
 class BaseInternalAttribute(InternalCallable):
-    name = ""
+    name: Token
 
     @property
     def class_name(self):
-        return format_class_name(f"{self.get_class().name}.{self.name}")
+        return format_class_name(f"{self.get_class().name.lexeme}.{self.name.lexeme}")
 
     def get_class(self):
         return self.instance.klass
@@ -68,12 +73,12 @@ class BaseInternalAttribute(InternalCallable):
         self.instance = instance
 
     def __str__(self):
-        return f"<attribute '{self.name}' of class '{self.instance.name}'>"
+        return f"<attribute '{self.name.lexeme}' of class '{self.instance.name}'>"
 
 
 # Methods shared by all class instances
 class SharedIsNotTrue(BaseInternalMethod):
-    name = "isNotTrue"
+    name = make_internal_token("isNotTrue")
 
     def call(self, interpreter, arguments):
         from .BaseTypes.Bool import BoolInstance
@@ -90,7 +95,7 @@ class SharedIsNotTrue(BaseInternalMethod):
 
 
 class SharedIsInstance(BaseInternalMethod):
-    name = "isInstance"
+    name = make_internal_token("isInstance")
 
     def lower_arity(self):
         return 1
@@ -116,7 +121,7 @@ class SharedIsInstance(BaseInternalMethod):
 
 
 class BaseInternalClass(ClassCallable):
-    name = ""
+    name: Token
     FIELDS = ()
     __COMMON_FIELDS = (
         SharedIsNotTrue,
@@ -128,11 +133,11 @@ class BaseInternalClass(ClassCallable):
 
     @property
     def class_name(self):
-        return format_class_name("class " + self.get_class().name)
+        return format_class_name("class " + self.get_class().name.lexeme)
 
     def __init__(self, interpreter: Interpreter):
         self.interpreter = interpreter
-        self.methods = {m.name: m for m in self.FIELDS + self.__COMMON_FIELDS}
+        self.methods = {m.name.lexeme: m for m in self.FIELDS + self.__COMMON_FIELDS}
         self.superclasses = []
         if hasattr(self, "init"):
             self.init()
@@ -159,6 +164,7 @@ class BaseInternalClass(ClassCallable):
     def lower_arity(self):
         return 0
 
+    @property
     def parameters(self):
         return []
 
@@ -168,13 +174,13 @@ class BaseInternalInstance(InstanceCallable):
 
     def __init__(self, interpreter: Interpreter):
         self.interpreter = interpreter
-        self.klass = self.interpreter.environment.internal_get(self.CLASS.name)
+        self.klass = self.interpreter.environment.get(self.CLASS.name)
 
     @property
     def class_name(self):
-        return format_class_name(self.get_class().name)
+        return format_class_name(self.get_class().name.lexeme)
 
-    def internal_find_method(self, name):
+    def internal_find_method(self, name: str):
         return self.klass.internal_find_method(name).bind(self)
 
     def get_class(self):
@@ -183,7 +189,7 @@ class BaseInternalInstance(InstanceCallable):
 
 def is_instance(interpreter: Interpreter, instance: InstanceCallable, *class_names: str) -> bool:
     for class_name in class_names:
-        klass = interpreter.environment.internal_get(class_name)
+        klass = interpreter.environment.get(class_name)
         val = instance.internal_find_method("isInstance").call(
             interpreter, [klass]
         ).value

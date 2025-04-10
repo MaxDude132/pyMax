@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute
+from .main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token
 
 if TYPE_CHECKING:
     from maxlang.parse.interpreter import Interpreter
@@ -16,7 +16,7 @@ NEXT_SENTINEL = NextSentinel()
 
 
 def internal_next(interpreter: Interpreter, values):
-    next_class = interpreter.environment.internal_get(NextClass.name)
+    next_class = interpreter.environment.get(NextClass.name)
     first = None
     previous = None
     sentinel = NextInstance(next_class, NEXT_SENTINEL, NEXT_SENTINEL)
@@ -35,7 +35,7 @@ def internal_next(interpreter: Interpreter, values):
 
 
 class NextValue(BaseInternalAttribute):
-    name = "first"
+    name = make_internal_token("first")
     instance: NextInstance
 
     def call(self, interpreter, arguments):
@@ -43,7 +43,7 @@ class NextValue(BaseInternalAttribute):
 
 
 class NextNextNode(BaseInternalAttribute):
-    name = "next_node"
+    name = make_internal_token("next_node")
     instance: NextInstance
 
     def call(self, interpreter, arguments):
@@ -51,7 +51,7 @@ class NextNextNode(BaseInternalAttribute):
 
 
 class NextClass(BaseInternalClass):
-    name = "next"
+    name = make_internal_token("next")
 
     def lower_arity(self):
         return 2

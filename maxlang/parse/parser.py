@@ -20,6 +20,7 @@ from .expressions import (
     Parameter,
     Pair,
     Argument,
+    Type,
 )
 from .statements import (
     Statement,
@@ -35,6 +36,10 @@ from .statements import (
 )
 from maxlang.errors import ParserError
 from maxlang.native_functions import BUILTIN_TYPES
+from maxlang.native_functions.BaseTypes.Bool import BoolClass
+from maxlang.native_functions.BaseTypes.Float import FloatClass
+from maxlang.native_functions.BaseTypes.Int import IntClass
+from maxlang.native_functions.BaseTypes.String import StringClass
 
 
 class ParserControl:
@@ -138,8 +143,7 @@ class ExpressionsParser(ParserControl):
             value = self.assignment()
 
             if isinstance(expression, Variable):
-                name = expression.name
-                return Assignment(name, value)
+                return Assignment(expression, value)
             elif isinstance(expression, Get):
                 return Set(expression.obj, expression.name, value)
 
@@ -248,11 +252,11 @@ class ExpressionsParser(ParserControl):
 
     def primary(self) -> Expression:
         if self.match(TokenType.FALSE):
-            return Literal(False)
+            return Literal(False, Type(BoolClass, self.previous()))
         if self.match(TokenType.TRUE):
-            return Literal(True)
+            return Literal(True, Type(BoolClass, self.previous()))
         if self.match(TokenType.NULL):
-            return Literal(None)
+            return Literal(None, Type(None, self.previous()))
 
         if self.match(TokenType.SUPER):
             keyword = self.previous()
@@ -263,14 +267,18 @@ class ExpressionsParser(ParserControl):
                 )
             return Super(keyword, method)
 
-        if self.match(TokenType.FLOAT, TokenType.STRING, TokenType.INT):
-            return Literal(self.previous().literal)
+        if self.match(TokenType.FLOAT):
+            return Literal(self.previous().literal, Type(FloatClass, self.previous()))
+        if self.match(TokenType.STRING):
+            return Literal(self.previous().literal, Type(StringClass, self.previous()))
+        if self.match(TokenType.INT):
+            return Literal(self.previous().literal, Type(IntClass, self.previous()))
 
         if self.match(TokenType.SELF):
             return Self(self.previous())
 
         if self.match(TokenType.LAMBDA):
-            return self.function_body("lambda")
+            return self.function_body("lambda", self.previous())
 
         if self.match(TokenType.IDENTIFIER):
             return Variable(self.previous())
@@ -284,7 +292,7 @@ class ExpressionsParser(ParserControl):
 
         raise self.error(self.peek(), "Expect expression.")
 
-    def finish_call(self, expression: Expression):
+    def finish_call(self, expression: Variable):
         arguments: list[Expression] = []
 
         has_named_arg = False
@@ -293,10 +301,10 @@ class ExpressionsParser(ParserControl):
         if not self.check(TokenType.RIGHT_PAREN):
             while True:
                 self.skip_newlines()
-                name_or_arg = self.expression()
+                name_or_arg: Variable = self.expression()
                 if self.match(TokenType.COLON):
                     self.skip_newlines()
-                    argument = Argument(name_or_arg, self.expression())
+                    argument = Argument(name_or_arg.name, self.expression())
                     has_named_arg = True
                 else:
                     if has_named_arg:
@@ -315,7 +323,7 @@ class ExpressionsParser(ParserControl):
         paren = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguments.")
         return Call(expression, paren, arguments)
 
-    def function_body(self, kind: str):
+    def function_body(self, kind: str, function_name: Token):
         parameters: list[Parameter] = []
         self.skip_newlines()
         if self.match(TokenType.COLON):
@@ -346,7 +354,7 @@ class ExpressionsParser(ParserControl):
         self.skip_newlines()
         self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")
         body = self.block()
-        return Lambda(parameters, body)
+        return Lambda(function_name, parameters, body)
 
 
 class StatementsParser(ExpressionsParser):
@@ -406,7 +414,7 @@ class StatementsParser(ExpressionsParser):
     def function(self, kind: str) -> Function:
         self.skip_newlines()
         name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
-        return Function(name, self.function_body(kind))
+        return Function(name, self.function_body(kind, name))
 
     def var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")

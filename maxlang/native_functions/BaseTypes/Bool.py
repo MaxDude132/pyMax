@@ -1,5 +1,5 @@
 from __future__ import annotations
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 
 
@@ -21,7 +21,7 @@ def set_value(instance: BoolInstance, value: bool):
 
 
 class BoolInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 1
@@ -34,7 +34,7 @@ class BoolInit(BaseInternalMethod):
 
 
 class BoolEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -54,14 +54,14 @@ class BoolEquals(BaseInternalMethod):
 
 
 class BoolIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         return BoolInstance(interpreter).set_value(self.instance.value)
 
 
 class BoolToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -72,7 +72,7 @@ class BoolToString(BaseInternalMethod):
 
 
 class BoolClass(BaseInternalClass):
-    name = "Bool"
+    name = make_internal_token("Bool")
     FIELDS = (
         BoolInit,
         BoolEquals,

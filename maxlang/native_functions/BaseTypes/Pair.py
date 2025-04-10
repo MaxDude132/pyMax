@@ -3,12 +3,13 @@ from ..main import (
     BaseInternalAttribute,
     BaseInternalInstance,
     BaseInternalMethod,
+    make_internal_token,
 )
 from maxlang.errors import InternalError
 
 
 class PairInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 2
@@ -21,21 +22,21 @@ class PairInit(BaseInternalMethod):
 
 
 class PairFirst(BaseInternalAttribute):
-    name = "first"
+    name = make_internal_token("first")
 
     def call(self, interpreter, arguments):
         return self.instance.first
 
 
 class PairSecond(BaseInternalAttribute):
-    name = "second"
+    name = make_internal_token("second")
 
     def call(self, interpreter, arguments):
         return self.instance.second
 
 
 class PairEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -55,7 +56,7 @@ class PairEquals(BaseInternalMethod):
 
 
 class PairToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -67,7 +68,7 @@ class PairToString(BaseInternalMethod):
 
 
 class PairClass(BaseInternalClass):
-    name = "Pair"
+    name = make_internal_token("Pair")
     FIELDS = (PairInit, PairFirst, PairSecond, PairEquals, PairToString)
 
     @property

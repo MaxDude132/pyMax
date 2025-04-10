@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Any
 
 from maxlang.lex import Token
-from maxlang.errors import InterpreterError, InternalError
+from maxlang.errors import InterpreterError
 
 
 VARIABLE_VALUE_SENTINEL = object()
@@ -23,15 +23,6 @@ class Environment:
 
         raise InterpreterError(name, f"Undefined variable '{name.lexeme}'.")
 
-    def internal_get(self, name: str):
-        if name in self.values:
-            return self.values[name]
-
-        if self.enclosing is not None:
-            return self.enclosing.internal_get(name)
-
-        raise InternalError(f"Undefined variable '{name}'")
-
     def get_at(self, distance: int, name: str):
         return self.ancestor(distance).values.get(name)
 
@@ -41,7 +32,8 @@ class Environment:
     def ancestor(self, distance: int):
         environment = self
         for _ in range(distance):
-            environment = environment.enclosing
+            if environment.enclosing is not None:
+                environment = environment.enclosing
 
         return environment
 

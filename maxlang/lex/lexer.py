@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 
 from .token_type import TokenType
@@ -9,6 +10,15 @@ class Token:
     lexeme: str
     literal: object
     line: int
+
+    def __hash__(self) -> str:
+        return hash(self.lexeme)
+    
+    def __eq__(self, other: Token) -> bool:
+        if not isinstance(other, Token):
+            return False
+        
+        return self.lexeme == other.lexeme and self.type_ == other.type_
 
 
 @dataclass

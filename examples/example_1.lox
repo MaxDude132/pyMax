@@ -1,28 +1,7 @@
--*class MyString: String {
-    init: String value {
-        super(value)
+class Tester {
+    init: String test {
+        self.test = test
     }
 }
 
---print(MyString("test") == "test")
-*-
-class First {    
-    init: String value {
-        self.value = value                  
-    }   
-}
-                      
-class Second: First {
-    init: String value {
-        super(value)                  
-    }
-}
-                      
-class Third: Second {
-    init: String value {
-        super(value)                  
-    }
-}
-                      
-third = Third("test")
-print(third.value)
+test = Tester("test")("test")

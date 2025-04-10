@@ -1,9 +1,9 @@
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 
 
 class IntInit(BaseInternalMethod):
-    name = "init"
+    name = make_internal_token("init")
 
     def lower_arity(self):
         return 1
@@ -16,7 +16,7 @@ class IntInit(BaseInternalMethod):
 
 
 class IntAdd(BaseInternalMethod):
-    name = "add"
+    name = make_internal_token("add")
 
     def lower_arity(self):
         return 1
@@ -37,12 +37,12 @@ class IntAdd(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class IntSubstract(BaseInternalMethod):
-    name = "substract"
+    name = make_internal_token("substract")
 
     def lower_arity(self):
         return 1
@@ -63,12 +63,12 @@ class IntSubstract(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class IntMultiply(BaseInternalMethod):
-    name = "multiply"
+    name = make_internal_token("multiply")
 
     def lower_arity(self):
         return 1
@@ -89,12 +89,12 @@ class IntMultiply(BaseInternalMethod):
             )
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class IntDivide(BaseInternalMethod):
-    name = "divide"
+    name = make_internal_token("divide")
 
     def lower_arity(self):
         return 1
@@ -118,12 +118,12 @@ class IntDivide(BaseInternalMethod):
             raise InternalError("Attempted division by zero.")
 
         raise InternalError(
-            f"Cannot {self.name} {self.instance.class_name} and {arguments[0].class_name}"
+            f"Cannot {self.name.lexeme} {self.instance.class_name} and {arguments[0].class_name}"
         )
 
 
 class IntEquals(BaseInternalMethod):
-    name = "equals"
+    name = make_internal_token("equals")
 
     def lower_arity(self):
         return 1
@@ -145,7 +145,7 @@ class IntEquals(BaseInternalMethod):
 
 
 class IntGreaterThan(BaseInternalMethod):
-    name = "greaterThan"
+    name = make_internal_token("greaterThan")
 
     def lower_arity(self):
         return 1
@@ -167,14 +167,14 @@ class IntGreaterThan(BaseInternalMethod):
 
 
 class IntNegate(BaseInternalMethod):
-    name = "negate"
+    name = make_internal_token("negate")
 
     def call(self, interpreter, arguments):
         return IntInstance(interpreter).set_value(-self.instance.value)
 
 
 class IntIsTrue(BaseInternalMethod):
-    name = "isTrue"
+    name = make_internal_token("isTrue")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -183,7 +183,7 @@ class IntIsTrue(BaseInternalMethod):
 
 
 class IntToString(BaseInternalMethod):
-    name = "toString"
+    name = make_internal_token("toString")
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -192,7 +192,7 @@ class IntToString(BaseInternalMethod):
 
 
 class IntClass(BaseInternalClass):
-    name = "Int"
+    name = make_internal_token("Int")
     FIELDS = (
         IntInit,
         IntAdd,

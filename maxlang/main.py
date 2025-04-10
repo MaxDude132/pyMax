@@ -1,7 +1,7 @@
 import sys
 
 from .lex import Lexer, Token, TokenType
-from .parse import Parser, AstPrinter, Interpreter, Resolver
+from .parse import Parser, AstPrinter, Interpreter, Resolver, TypeChecker
 from .errors import InterpreterError
 
 
@@ -49,12 +49,14 @@ class Max:
         if self.had_error:
             return
 
-        if self.show_ast:
-            AstPrinter().print(statements)
-
         interpreter = Interpreter(self.interpreter_error)
         resolver = Resolver(interpreter, self.parser_error)
         resolver.resolve_many(statements)
+        type_checker = TypeChecker(interpreter, self.parser_error)
+        type_checker.check_many(statements)
+
+        if self.show_ast:
+            AstPrinter().print(statements)
 
         if self.had_error:
             return
