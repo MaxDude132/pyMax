@@ -6,16 +6,14 @@ def test_toString():
 
 
 def test_init():
-    assert run_source("print(String(true))") == "true"
-    assert run_source("print(String(false))") == "false"
-    assert run_source("print(String(1))") == "1"
-    assert run_source("print(String(0))") == "0"
+    assert run_source("print(String('test'))") == "test"
+    assert run_source("print(String(true))") == formatted_error("Error at 'true': Expected String but got Bool for parameter value in call to String.", 1)
 
 
 def test_equals():
     assert run_source("print('test'.equals('test'))") == "true"
     assert run_source("print('test'.equals('tes'))") == "false"
-    assert run_source("print('test'.equals(1))") == formatted_error("Cannot compare <String> and <Int>", 1)
+    assert run_source("print('test'.equals(1))") == formatted_error("Error at '1': Expected String but got Int for parameter other in call to equals.", 1)
 
 
 def test_is_true():
@@ -24,6 +22,6 @@ def test_is_true():
 
 
 def test_multiply():
-    assert run_source("print('a' * 3)") == "aaa"
-    assert run_source("print('a' * '3')") == formatted_error("Cannot multiply <String> and <String>", 1)
-    assert run_source("print('a' * 3.2)") == formatted_error("Cannot multiply <String> and <Float>", 1)
+    assert run_source("print('a'.multiply(3))") == "aaa"
+    assert run_source("print('a'.multiply('3'))") == formatted_error("Error at ''3'': Expected Int but got String for parameter value in call to multiply.", 1)
+    assert run_source("print('a'.multiply(3.2))") == formatted_error("Error at '3.2': Expected Int but got Float for parameter value in call to multiply.", 1)

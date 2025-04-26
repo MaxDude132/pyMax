@@ -6,16 +6,26 @@ from ..main import (
     make_internal_token,
 )
 from maxlang.errors import InternalError
+from maxlang.parse.expressions import Parameter
 
 
 class PairInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 2
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
 
-    def upper_arity(self):
-        return 2
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("left")
+            ),
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("right")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         self.instance.set_values(*arguments)
@@ -24,12 +34,24 @@ class PairInit(BaseInternalMethod):
 class PairFirst(BaseInternalAttribute):
     name = make_internal_token("first")
 
+    @property
+    def return_type(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
+
     def call(self, interpreter, arguments):
         return self.instance.first
 
 
 class PairSecond(BaseInternalAttribute):
     name = make_internal_token("second")
+
+    @property
+    def return_type(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
 
     def call(self, interpreter, arguments):
         return self.instance.second
@@ -38,11 +60,20 @@ class PairSecond(BaseInternalAttribute):
 class PairEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_type(self):
+        from .Bool import BoolClass
+
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -58,6 +89,12 @@ class PairEquals(BaseInternalMethod):
 class PairToString(BaseInternalMethod):
     name = make_internal_token("toString")
 
+    @property
+    def return_type(self):
+        from .String import StringClass
+
+        return StringClass.name
+
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
@@ -72,12 +109,6 @@ class PairClass(BaseInternalClass):
     @property
     def instance_class(self):
         return PairInstance
-
-    def lower_arity(self):
-        return 2
-
-    def upper_arity(self):
-        return 2
 
 
 class PairInstance(BaseInternalInstance):

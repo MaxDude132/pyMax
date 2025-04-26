@@ -23,10 +23,12 @@ class InternalCallable:
         return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
 
     def upper_arity(self) -> int:
-        return 0
+        if self.parameters and self.parameters[-1].is_varargs:
+            return float("inf")
+        return len(self.parameters)
 
     def lower_arity(self) -> int:
-        return 0
+        return len([arg for arg in self.parameters if arg.default is None and not arg.is_varargs])
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -55,8 +57,16 @@ class FunctionCallable(InternalCallable):
 
     def call(self, interpreter: "Interpreter", arguments: list[Any]):
         environment = Environment(self.closure)
+        varargs_arg = self.declaration.params[-1] if self.declaration.params and self.declaration.params[-1].is_varargs else None
+        varargs = None
         for i, argument in enumerate(arguments):
-            environment.define(self.declaration.params[i].name, argument)
+            if i + 1 >= len(self.declaration.params) and varargs_arg is not None:
+                varargs = argument
+            else:
+                environment.define(self.declaration.params[i].name, argument)
+
+        if varargs:
+            environment.define(varargs_arg.name, varargs)
 
         try:
             interpreter.execute_block(self.declaration.body, environment)
@@ -67,15 +77,6 @@ class FunctionCallable(InternalCallable):
             return ret.value
 
         return self.return_self()
-
-    def check_arity(self, arg_count: int) -> bool:
-        return arg_count <= self.upper_arity() and arg_count >= self.lower_arity()
-
-    def upper_arity(self) -> int:
-        return len(self.declaration.params)
-
-    def lower_arity(self) -> int:
-        return len([arg for arg in self.declaration.params if arg.default is None])
 
     def bind(self, instance: InstanceCallable) -> FunctionCallable:
         environment = Environment(self.closure)

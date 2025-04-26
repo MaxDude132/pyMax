@@ -1,46 +1,36 @@
 from __future__ import annotations
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
-
-
-def set_value(instance: BoolInstance, value: bool):
-    if isinstance(value, bool):
-        instance.value = value
-    else:
-        try:
-            instance.value = (
-                value.internal_find_method("isTrue")
-                .call(instance.interpreter, [])
-                .value
-            )
-        except KeyError:
-            raise InternalError(
-                f"class {value.class_name} does not implement the isTrue method."
-            )
-    return instance
+from maxlang.parse.expressions import Parameter
 
 
 class BoolInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("value")
+            )
+        ]
 
     def call(self, interpreter, arguments):
-        set_value(self.instance, arguments[0])
+        self.instance.set_value(arguments[0])
 
 
 class BoolEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         if is_instance(interpreter, arguments[0], BoolClass.name):
@@ -63,6 +53,12 @@ class BoolIsTrue(BaseInternalMethod):
 class BoolToString(BaseInternalMethod):
     name = make_internal_token("toString")
 
+    @property
+    def return_token(self):
+        from .String import StringClass
+        
+        return StringClass.name
+
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
@@ -84,12 +80,6 @@ class BoolClass(BaseInternalClass):
     def instance_class(self):
         return BoolInstance
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
-
 
 class BoolInstance(BaseInternalInstance):
     CLASS = BoolClass
@@ -99,7 +89,14 @@ class BoolInstance(BaseInternalInstance):
         self.value = None
 
     def set_value(self, value: bool):
-        return set_value(self, value)
+        if isinstance(value, bool):
+            self.value = value
+        elif is_instance(self.interpreter, value, BoolClass.name):
+            self.value = value.value
+        else:
+            raise InternalError(f"Invalid value passed to {self.class_name}.")
+        
+        return self
 
     def __str__(self):
         return str(self.value)

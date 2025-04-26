@@ -8,6 +8,9 @@ from .BaseTypes.Int import IntClass
 from .BaseTypes.Float import FloatClass
 from .BaseTypes.String import StringClass
 from .BaseTypes.Bool import BoolClass
+from .BaseTypes.VarArgs import VarArgsClass
+from .BaseTypes.Void import VoidClass
+from .BaseTypes.Object import ObjectClass
 from .next import NextClass
 
 
@@ -22,7 +25,6 @@ BUILTIN_TYPES = {
         ListClass,
         MapClass,
         PairClass,
-        NextClass,
     )
 }
 
@@ -35,4 +37,24 @@ NATIVE_FUNCTIONS = {
         Print,
     )
     + tuple(BUILTIN_TYPES.values())
+}
+
+
+INTERNAL_TYPES = {
+    func.name: func
+    for func in (
+        # Base types
+        NextClass,
+        VarArgsClass,
+        VoidClass,
+        ObjectClass,
+    )
+}
+
+
+ALL_FUNCTIONS = {
+    func.name: func
+    for func in tuple(NATIVE_FUNCTIONS.values())
+    + tuple(INTERNAL_TYPES.values())
+
 }

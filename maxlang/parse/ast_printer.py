@@ -88,7 +88,7 @@ class AstPrinter(Visitor):
     def visit_function(self, statement, function_type="function"):
         string = (
             self.parenthesize(
-                f"{function_type} {statement.name.lexeme}({', '.join(f"{s.type_.lexeme} {s.name.lexeme}" for s in statement.function.params)})"
+                f"{function_type} {statement.name.lexeme}({', '.join(f"{'varargs ' if s.is_varargs else ''}{s.types[0].lexeme} {s.name.lexeme}" for s in statement.function.params)})"
             )
             + "\n"
         )

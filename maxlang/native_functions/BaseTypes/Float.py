@@ -1,15 +1,19 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
+from maxlang.parse.expressions import Parameter
 
 
 class FloatInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("value")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         self.instance.set_value(arguments[0])
@@ -18,11 +22,14 @@ class FloatInit(BaseInternalMethod):
 class FloatAdd(BaseInternalMethod):
     name = make_internal_token("add")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -40,11 +47,14 @@ class FloatAdd(BaseInternalMethod):
 class FloatSubstract(BaseInternalMethod):
     name = make_internal_token("substract")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -62,11 +72,14 @@ class FloatSubstract(BaseInternalMethod):
 class FloatMultiply(BaseInternalMethod):
     name = make_internal_token("multiply")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -84,11 +97,14 @@ class FloatMultiply(BaseInternalMethod):
 class FloatDivide(BaseInternalMethod):
     name = make_internal_token("divide")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -109,11 +125,20 @@ class FloatDivide(BaseInternalMethod):
 class FloatEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -131,11 +156,20 @@ class FloatEquals(BaseInternalMethod):
 class FloatGreaterThan(BaseInternalMethod):
     name = make_internal_token("greaterThan")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -160,6 +194,12 @@ class FloatNegate(BaseInternalMethod):
 class FloatToString(BaseInternalMethod):
     name = make_internal_token("toString")
 
+    @property
+    def return_token(self):
+        from .String import StringClass
+        
+        return StringClass.name
+
     def call(self, interpreter, arguments):
         from .String import StringInstance
 
@@ -168,6 +208,12 @@ class FloatToString(BaseInternalMethod):
 
 class FloatIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
+
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -209,22 +255,12 @@ class FloatInstance(BaseInternalInstance):
         self.value = None
 
     def set_value(self, value):
-        from .Int import IntClass
-        from .String import StringClass
-
         if isinstance(value, float):
             self.value = value
         elif isinstance(value, int):
             self.value = float(value)
         elif is_instance(self.interpreter, value, FloatClass.name):
             self.value = value.value
-        elif is_instance(self.interpreter, value, IntClass.name):
-            self.value = float(value.value)
-        elif is_instance(self.interpreter, value, StringClass.name):
-            try:
-                self.value = float(value.value)
-            except ValueError:
-                raise InternalError(f"Invalid value passed to {self.class_name}.")
         else:
             raise InternalError(f"Invalid value passed to {self.class_name}.")
 

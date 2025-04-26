@@ -50,6 +50,8 @@ class ParserControl:
         self.tokens = tokens
         self.error_callback = error_callback
 
+        self.current_function_name: Token | None = None
+
         self.current = 0
 
     def match(self, *token_types: TokenType) -> bool:
@@ -286,6 +288,9 @@ class ExpressionsParser(ParserControl):
                 method = self.consume(
                     TokenType.IDENTIFIER, "Expect superclass method name."
                 )
+            else:
+                method = self.current_function_name
+
             return Super(keyword, method)
 
         if self.match(TokenType.FLOAT):
@@ -342,9 +347,16 @@ class ExpressionsParser(ParserControl):
         parameters: list[Parameter] = []
         if self.match(TokenType.COLON):
             has_had_default = False
+            has_had_varargs = False
             while True:
+                is_varargs = self.match(TokenType.VARARGS)
                 type_ = self.consume(TokenType.IDENTIFIER, "Expect type.")
                 name = self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
+
+                if has_had_varargs:
+                    raise self.error(name, "varargs parameter must be the last parameter of a function.")
+                has_had_varargs = is_varargs
+                
                 default = None
                 if self.match(TokenType.EQUAL):
                     default = self.expression()
@@ -356,7 +368,7 @@ class ExpressionsParser(ParserControl):
                         "Cannot set a parameter without a default value after a parameter with a default value.",
                     )
 
-                parameters.append(Parameter(type_, name, default))
+                parameters.append(Parameter([type_], name, default, is_varargs=is_varargs))
                 if not self.match(TokenType.COMMA) or self.check_next(
                     TokenType.LEFT_BRACE
                 ):
@@ -421,7 +433,13 @@ class StatementsParser(ExpressionsParser):
 
     def function(self, kind: str) -> Function:
         name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
-        return Function(name, self.function_body(kind, name))
+
+        previous_function_name = self.current_function_name
+        self.current_function_name = name
+        obj = Function(name, self.function_body(kind, name))
+        self.current_function_name = previous_function_name
+        return obj
+
 
     def var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")

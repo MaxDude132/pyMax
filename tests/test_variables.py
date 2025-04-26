@@ -20,5 +20,5 @@ def test_inexistant_variable():
 print(test)
 """
         )
-        == formatted_error("Undefined variable 'test'.", 2)
+        == formatted_error("Error at 'test': Undefined variable 'test'.", 2)
     )

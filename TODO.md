@@ -18,7 +18,7 @@
 - write a test suite -- DONE
 - implement type checking
 - add string formatting capabilities
-- implement toInt, toFloat
+- implement toInt, toFloat, toBool
 - improve iterations to be lazily calulated instead of all at once
 - improve error system with different error types, more complete error messages
 - implement addEquals

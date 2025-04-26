@@ -1,29 +1,41 @@
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from ..next import internal_next
 from maxlang.errors import InternalError
+from maxlang.parse.expressions import Parameter
 
 
 class ListInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 0
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
 
-    def upper_arity(self):
-        return float("inf")
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("items"),
+                is_varargs=True
+            )
+        ]
 
     def call(self, interpreter, arguments):
-        self.instance.set_values(*arguments)
+        self.instance.set_values(*arguments[0].values)
 
 
 class ListPush(BaseInternalMethod):
     name = make_internal_token("push")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         self.instance.values.append(arguments[0])
@@ -31,6 +43,12 @@ class ListPush(BaseInternalMethod):
 
 class ListPop(BaseInternalMethod):
     name = make_internal_token("pop")
+
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
 
     def call(self, interpreter, arguments):
         try:
@@ -44,11 +62,22 @@ class ListPop(BaseInternalMethod):
 class ListGet(BaseInternalMethod):
     name = make_internal_token("get")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Int import IntClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [IntClass.name],
+                make_internal_token("other")
+            )
+        ]
+
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
 
     def call(self, interpreter, arguments):
         try:
@@ -62,11 +91,14 @@ class ListGet(BaseInternalMethod):
 class ListExtend(BaseInternalMethod):
     name = make_internal_token("extend")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         if not is_instance(interpreter, arguments[0], ListClass.name):
@@ -83,6 +115,12 @@ class ListExtend(BaseInternalMethod):
 class ListIterate(BaseInternalMethod):
     name = make_internal_token("iterate")
 
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
+
     def call(self, interpreter, arguments):
         return internal_next(interpreter, self.instance.values)
 
@@ -90,11 +128,14 @@ class ListIterate(BaseInternalMethod):
 class ListAdd(BaseInternalMethod):
     name = make_internal_token("add")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         if is_instance(interpreter, arguments[0], ListClass.name):
@@ -110,11 +151,16 @@ class ListAdd(BaseInternalMethod):
 class ListMultiply(BaseInternalMethod):
     name = make_internal_token("multiply")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Int import IntClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [IntClass.name],
+                make_internal_token("other")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -132,11 +178,20 @@ class ListMultiply(BaseInternalMethod):
 class ListEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -152,6 +207,12 @@ class ListEquals(BaseInternalMethod):
 class ListIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
 
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
+
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
@@ -160,6 +221,12 @@ class ListIsTrue(BaseInternalMethod):
 
 class ListToString(BaseInternalMethod):
     name = make_internal_token("toString")
+
+    @property
+    def return_token(self):
+        from .String import StringClass
+        
+        return StringClass.name
 
     def call(self, interpreter, arguments):
         from .String import StringInstance

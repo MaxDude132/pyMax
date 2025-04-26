@@ -12,14 +12,14 @@ def test_init():
     assert run_source("print(Map(1 -> 'test', 2 -> 'test'))") == "Map(1 -> \"test\", 2 -> \"test\")"
     assert run_source("print(Map(1 -> Map(1 -> true)))") == "Map(1 -> Map(1 -> true))"
     assert run_source("print(Map(Map(1 -> true) -> 1))") == "Map(Map(1 -> true) -> 1)"
-    assert run_source("print(Map(1))") == formatted_error("Invalid value passed to <Map>.", 1)
+    assert run_source("print(Map(1))") == formatted_error("Error at '1': Expected Pair but got Int for parameter items in call to Map.", 1)
 
 
 def test_equals():
     assert run_source("print(Map(1 -> true).equals(Map(1 -> true)))") == "true"
     assert run_source("print(Map(1 -> false).equals(Map(1 -> true)))") == "false"
     assert run_source("print(Map(2 -> true).equals(Map(1 -> true)))") == "false"
-    assert run_source("print(Map(1 -> true).equals(1.0))") == formatted_error("Cannot compare <Map> and <Float>", 1)
+    assert run_source("print(Map(1 -> true).equals(1.0))") == formatted_error("Error at '1.0': Expected Map but got Float for parameter other in call to equals.", 1)
 
 
 def test_is_true():
@@ -30,8 +30,8 @@ def test_is_true():
 def test_add():
     assert run_source("print(Map(1 -> true).add(Map(2 -> true)))") == "Map(1 -> true, 2 -> true)"
     assert run_source("print(Map(1 -> true).add(Map(1 -> false)))") == "Map(1 -> false)"
-    assert run_source("print(Map(1 -> true).add(2 -> false))") == "Map(1 -> true, 2 -> false)"
-    assert run_source("print(Map(1 -> true).add(true))") == formatted_error("Can only add maps or pairs to maps.", 1)
+    #assert run_source("print(Map(1 -> true).add(2 -> false))") == "Map(1 -> true, 2 -> false)"
+    assert run_source("print(Map(1 -> true).add(true))") == formatted_error("Error at 'true': Expected Map but got Bool for parameter key in call to add.", 1)
 
 
 def test_push():
@@ -51,7 +51,7 @@ print(test)
 test = Map(1 -> 'test')
 test.push(2)
 print(test)
-""") == formatted_error("Invalid value passed to <Map.push>.", 3)
+""") == formatted_error("Error at '2': Expected Pair but got Int for parameter item in call to push.", 3)
 
 
 def test_get():

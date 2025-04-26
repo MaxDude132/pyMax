@@ -1,5 +1,5 @@
 class Tester {
-    init: String value {
+    init: varargs String value {
         self.value = value
     }
     toString {
@@ -7,6 +7,5 @@ class Tester {
     }
 }
 
-tester = Tester("test")
-test = Map(tester -> "test", Tester("test2") -> "other_test")
-print(test)
+tester = Tester("test", "other_test")
+print(tester)

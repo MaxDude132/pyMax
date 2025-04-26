@@ -2,18 +2,24 @@ from __future__ import annotations
 
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from .Pair import PairInstance, PairClass
+from .VarArgs import VarArgsInstance
 from ..next import internal_next
 from maxlang.errors import InternalError
+from maxlang.parse.expressions import Parameter
 
 
 class MapInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 0
-
-    def upper_arity(self):
-        return float("inf")
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [PairClass.name],
+                make_internal_token("items"),
+                is_varargs=True
+            )
+        ]
 
     def call(self, interpreter, arguments):
         self.instance.set_values(*arguments)
@@ -22,11 +28,14 @@ class MapInit(BaseInternalMethod):
 class MapPush(BaseInternalMethod):
     name = make_internal_token("push")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 2
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [PairClass.name],
+                make_internal_token("item")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         try:
@@ -42,11 +51,22 @@ class MapPush(BaseInternalMethod):
 class MapGet(BaseInternalMethod):
     name = make_internal_token("get")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("key")
+            )
+        ]
+
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
 
     def call(self, interpreter, arguments):
         try:
@@ -60,6 +80,12 @@ class MapGet(BaseInternalMethod):
 class MapIterate(BaseInternalMethod):
     name = make_internal_token("iterate")
 
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
+
     def call(self, interpreter, arguments):
         values = [
             PairInstance(interpreter).set_values(k, v)
@@ -72,11 +98,22 @@ class MapRemove(BaseInternalMethod):
     name = make_internal_token("remove")
     instance: MapInstance
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("key")
+            )
+        ]
+
+    @property
+    def return_token(self):
+        from .Object import ObjectClass
+
+        return ObjectClass.name
 
     def call(self, interpreter, arguments):
         try:
@@ -94,14 +131,17 @@ class MapAdd(BaseInternalMethod):
     name = make_internal_token("add")
     instance: MapInstance
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("key")
+            )
+        ]
 
     def call(self, interpreter, arguments):
-        new_map = MapInstance(interpreter).set_values(*self.instance.get_pairs())
+        new_map = MapInstance(interpreter).set_values(VarArgsInstance(interpreter).set_values(*self.instance.get_pairs()))
         if is_instance(interpreter, arguments[0], MapClass.name):
             new_map.update(arguments[0])
         elif is_instance(interpreter, arguments[0], PairClass.name):
@@ -115,11 +155,20 @@ class MapAdd(BaseInternalMethod):
 class MapEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -135,6 +184,12 @@ class MapEquals(BaseInternalMethod):
 class MapIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
 
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
+
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
 
@@ -143,6 +198,12 @@ class MapIsTrue(BaseInternalMethod):
 
 class MapToString(BaseInternalMethod):
     name = make_internal_token("toString")
+
+    @property
+    def return_token(self):
+        from .String import StringClass
+        
+        return StringClass.name
 
     def call(self, interpreter, arguments):
         from .String import StringInstance
@@ -187,8 +248,8 @@ class MapInstance(BaseInternalInstance):
         super().__init__(interpreter)
         self.values = {}
 
-    def set_values(self, *args: PairInstance):
-        for arg in args:
+    def set_values(self, args: VarArgsInstance):
+        for arg in args.values:
             if not is_instance(self.interpreter, arg, PairClass.name):
                 raise InternalError(f"Invalid value passed to {self.class_name}.")
             self.values[arg.first] = arg.second

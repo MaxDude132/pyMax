@@ -11,12 +11,13 @@ from .callable import (
 from .expressions import ExpressionVisitor, Expression, Binary, Argument
 from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
-from maxlang.native_functions import NATIVE_FUNCTIONS
+from maxlang.native_functions import ALL_FUNCTIONS
 from maxlang.native_functions.main import BaseInternalInstance
 from maxlang.native_functions.next import NEXT_SENTINEL
 from maxlang.native_functions.BaseTypes.Pair import PairInstance
 from maxlang.native_functions.BaseTypes.Bool import BoolInstance
 from maxlang.native_functions.BaseTypes.String import StringInstance
+from maxlang.native_functions.BaseTypes.VarArgs import VarArgsInstance
 from maxlang.errors import InterpreterError, InternalError
 
 
@@ -26,7 +27,7 @@ class InterpreterBase:
         self.locals: dict[Expression, int] = {}
 
         self.globals = Environment()
-        for name, func in NATIVE_FUNCTIONS.items():
+        for name, func in ALL_FUNCTIONS.items():
             self.globals.define(name, func(self))
 
         self.environment = self.globals
@@ -106,16 +107,25 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             value = self.evaluate(argument.value)
             args.append(value)
 
-        for parameter in callee.parameters[len(args) :]:
-            argument = arguments_dict.get(parameter.name.lexeme)
-            if argument is None and parameter.default is None:
-                raise InterpreterError(parameter.name, "Argument required in call.")
+        if callee.parameters and callee.parameters[-1].is_varargs:
+            start_index = len(callee.parameters) - 1
+            varargs = args[start_index:]
+            args = args[:start_index]
+            args.append(VarArgsInstance(self).set_values(*varargs))
+        else:
+            start_index = len(args)
 
-            if argument is not None:
-                value = self.evaluate(argument.value)
-                args.append(value)
-            else:
-                value = self.evaluate(parameter.default)
+            for i, parameter in enumerate(callee.parameters[start_index:]):
+                argument = arguments_dict.get(parameter.name.lexeme)
+                if argument is None and parameter.default is None and not parameter.is_varargs:
+                    raise InterpreterError(parameter.name, "Argument required in call.")
+
+                if parameter.is_varargs:
+                    value = []
+                elif argument is not None:
+                    value = self.evaluate(argument.value)
+                else:
+                    value = self.evaluate(parameter.default)
                 args.append(value)
 
         return args

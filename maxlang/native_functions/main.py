@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from maxlang.parse.callable import InternalCallable, ClassCallable, InstanceCallable
 from maxlang.errors import InternalError
-from maxlang.parse.expressions import Lambda
+from maxlang.parse.expressions import Lambda, Parameter
 from maxlang.lex import Token, TokenType
 
 if TYPE_CHECKING:
@@ -27,16 +27,30 @@ class BaseInternalFunction(InternalCallable):
             self.init()
 
     @property
+    def parameters(self):
+        return []
+
+    @property
     def declaration(self):
-        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), [], [])
+        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, [])
+
+    @property
+    def return_token(self) -> Token:
+        from .BaseTypes.Void import VoidClass
+
+        return VoidClass.name
 
 
 class BaseInternalMethod(InternalCallable):
     name: Token
+    
+    @property
+    def parameters(self) -> list[Parameter]:
+        return []
 
     @property
     def declaration(self):
-        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), [], [])
+        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, [])
 
     def get_class(self):
         return self.instance.klass
@@ -52,7 +66,11 @@ class BaseInternalMethod(InternalCallable):
     def bind(cls, instance: BaseInternalClass):
         return cls(instance)
 
-    def __init__(self, instance: BaseInternalClass):
+    @property
+    def return_token(self) -> Token:
+        return self.return_self().klass.name
+
+    def __init__(self, instance: BaseInternalInstance):
         self.instance = instance
 
     def __str__(self):
@@ -73,6 +91,13 @@ class BaseInternalAttribute(InternalCallable):
     def bind(cls, instance: BaseInternalClass):
         attribute = cls(instance)
         return attribute.call(attribute.instance.interpreter, [])
+
+    @property
+    def return_token(self) -> Token:
+        #raise ValueError("Internal Attribute must set a return class.")
+        from .BaseTypes.Void import VoidClass
+
+        return VoidClass.name
 
     def __init__(self, instance: BaseInternalClass):
         self.instance = instance
@@ -158,20 +183,41 @@ class BaseInternalClass(ClassCallable):
         return method.return_self()
 
     def internal_find_method(self, name: str):
-        return self.methods[name]
+        try:
+            return self.methods[name]
+        except KeyError:
+            raise InternalError(
+                f"{self.class_name} does not implement the '{name}' method."
+            )
 
     def check_arity(self, arg_count):
         return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
-
-    def upper_arity(self):
-        return 0
+    
+    def get_new_instance(self) -> BaseInternalInstance:
+        return self.instance_class(self.interpreter)
 
     def lower_arity(self):
-        return 0
+        try:
+            return self.internal_find_method("init").bind(self.get_new_instance()).lower_arity()
+        except InternalError:
+            return 0
+
+    def upper_arity(self):
+        try:
+            return self.internal_find_method("init").bind(self.get_new_instance()).upper_arity()
+        except InternalError:
+            return 0
 
     @property
     def parameters(self):
-        return []
+        try:
+            return self.internal_find_method("init").bind(self.get_new_instance()).parameters
+        except InternalError:
+            return []
+
+    @property
+    def return_token(self) -> Token:
+        return self.name
 
 
 class BaseInternalInstance(InstanceCallable):
@@ -187,6 +233,9 @@ class BaseInternalInstance(InstanceCallable):
 
     def internal_find_method(self, name: str):
         return self.klass.internal_find_method(name).bind(self)
+
+    def __str__(self) -> str:
+        return self.internal_find_method("toString").call(self.interpreter, [])
 
     def get_class(self):
         return self.klass

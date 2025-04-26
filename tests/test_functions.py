@@ -22,7 +22,7 @@ def test_inexistant_function():
 test("test")
 """
         )
-        == formatted_error("Undefined variable 'test'.", 2)
+        == formatted_error("Error at 'test': Undefined variable 'test'.", 2)
     )
 
 
@@ -53,7 +53,7 @@ test: String arg_1 {
 test()
 """
         )
-        == formatted_error("Argument required in call.", 2)
+        == formatted_error("Error at 'test': Expected between 1 and 1 arguments in call to test but got 0.", 5)
     )
 
 
@@ -67,7 +67,7 @@ test: String arg_1, String arg_2 {
 test("test")
 """
         )
-        == formatted_error("Argument required in call.", 2)
+        == formatted_error("Error at 'test': Expected between 2 and 2 arguments in call to test but got 1.", 5)
     )
 
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
+from maxlang.parse.expressions import Parameter
 
 
 def set_value(instance: StringInstance, value: str):
@@ -12,11 +13,14 @@ def set_value(instance: StringInstance, value: str):
 class StringInit(BaseInternalMethod):
     name = make_internal_token("init")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("value")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         set_value(self.instance, arguments[0])
@@ -25,11 +29,14 @@ class StringInit(BaseInternalMethod):
 class StringAdd(BaseInternalMethod):
     name = make_internal_token("add")
 
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("value")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntInstance
@@ -48,11 +55,16 @@ class StringAdd(BaseInternalMethod):
 class StringMultiply(BaseInternalMethod):
     name = make_internal_token("multiply")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        from .Int import IntClass
 
-    def upper_arity(self):
-        return 1
+        return [
+            Parameter(
+                [IntClass.name],
+                make_internal_token("value")
+            )
+        ]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -70,11 +82,20 @@ class StringMultiply(BaseInternalMethod):
 class StringEquals(BaseInternalMethod):
     name = make_internal_token("equals")
 
-    def lower_arity(self):
-        return 1
+    @property
+    def parameters(self):
+        return [
+            Parameter(
+                [self.instance.klass.name],
+                make_internal_token("other")
+            )
+        ]
 
-    def upper_arity(self):
-        return 1
+    @property
+    def return_token(self):
+        from .Bool import BoolClass
+        
+        return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -91,6 +112,12 @@ class StringEquals(BaseInternalMethod):
 
 class StringIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
+
+    @property
+    def return_token(self):
+        from .String import StringClass
+        
+        return StringClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance

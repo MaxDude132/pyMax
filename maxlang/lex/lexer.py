@@ -42,7 +42,7 @@ KEYWORDS = {
     "self": TokenType.SELF,
     "super": TokenType.SUPER,
     "true": TokenType.TRUE,
-    "var": TokenType.VAR,
+    "varargs": TokenType.VARARGS,
     "while": TokenType.WHILE,
 }
 

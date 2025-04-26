@@ -99,4 +99,19 @@ class Third: Second {
 third = Third("test")
 print(third.value)
 """) == "test"
+
+
+def test_super_method_call():
+    assert run_source("""
+class First {    
+    init: String value {
+        self.value = value                  
+    }   
+}
+                      
+class Second: First {}
+                      
+second = Second("test")
+print(second.value)
+""") == "test"
     

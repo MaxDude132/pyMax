@@ -52,8 +52,12 @@ class Max:
         interpreter = Interpreter(self.interpreter_error)
         resolver = Resolver(interpreter, self.parser_error)
         resolver.resolve_many(statements)
+
+        if self.had_error:
+            return
+        
         type_checker = TypeChecker(interpreter, self.parser_error)
-        type_checker.check_many(statements)
+        type_checker.launch(statements)
 
         if self.show_ast:
             AstPrinter().print(statements)

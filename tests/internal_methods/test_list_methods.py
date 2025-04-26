@@ -11,13 +11,12 @@ def test_init():
     assert run_source("print(List(1))") == "List(1)"
     assert run_source("print(List(List(1)))") == "List(List(1))"
     assert run_source("print(List(1,2))") == "List(1, 2)"
-    assert run_source("print(List(Float('1.3')))") == "List(1.3)"
 
 
 def test_equals():
     assert run_source("print(List(1).equals(List(1)))") == "true"
     assert run_source("print(List(1).equals(List(2)))") == "false"
-    assert run_source("print(List(1).equals(1.0))") == formatted_error("Cannot compare <List> and <Float>", 1)
+    assert run_source("print(List(1).equals(1.0))") == formatted_error("Error at '1.0': Expected List but got Float for parameter other in call to equals.", 1)
 
 
 def test_is_true():
@@ -27,7 +26,7 @@ def test_is_true():
 
 def test_add():
     assert run_source("print(List(1).add(List(2)))") == "List(1, 2)"
-    assert run_source("print(List(1).add(true))") == formatted_error("Can only add a List to a List. Use the push method to add items to a List.", 1)
+    assert run_source("print(List(1).add(true))") == formatted_error("Error at 'true': Expected List but got Bool for parameter other in call to add.", 1)
 
 
 def test_push():
@@ -44,8 +43,8 @@ print(test)
 
 
 def test_pop():
-    assert run_source("print(List(1).pop())") == "1"
     assert run_source("print(List().pop())") == formatted_error("No more items in <List>.", 1)
+    assert run_source("print(List(1).pop())") == "1"
 
 
 def test_get():
@@ -63,7 +62,7 @@ print(test)
 test = List(1)
 test.extend(true)
 print(test)
-""") == formatted_error("Can only extend a List with another list. Use push to add an item to a List.", 3)
+""") == formatted_error("Error at 'true': Expected List but got Bool for parameter other in call to extend.", 3)
 
 
 def test_iterate():

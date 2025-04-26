@@ -64,9 +64,11 @@ class ExpressionVisitor:
 class Type:
     klass: FunctionCallable | ClassCallable | type[BaseInternalClass]
     token: Token
-    parameters: dict[str, Parameter] = field(default_factory=dict)
+    parameters: list[Parameter] = field(default_factory=list)
     methods: dict[str, Type] = field(default_factory=dict)
+    superclasses: list[Type] = field(default_factory=list)
     return_type: Type | None = None
+    calls_super: bool = False
 
 
 @dataclass
@@ -135,7 +137,7 @@ class Set(Expression):
 @dataclass
 class Super(Expression):
     keyword: Token
-    method: Token | None
+    method: Token
 
     def __hash__(self):
         return id(self)
@@ -175,9 +177,10 @@ class Assignment(Expression):
 
 @dataclass
 class Parameter:
-    type_: Token
+    types: list[Token]
     name: Token
     default: Expression | None = None
+    is_varargs: bool = False
 
 
 @dataclass

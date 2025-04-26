@@ -18,9 +18,9 @@ NEXT_SENTINEL = NextSentinel()
 def internal_next(interpreter: Interpreter, values):
     first = None
     previous = None
-    sentinel = NextInstance(interpreter, NEXT_SENTINEL, NEXT_SENTINEL)
+    sentinel = NextInstance(interpreter)
     for value in values:
-        current = NextInstance(interpreter, value, sentinel)
+        current = NextInstance(interpreter).set_values(value, sentinel)
 
         if previous is not None:
             previous.next_node = current
@@ -52,24 +52,13 @@ class NextNextNode(BaseInternalAttribute):
 class NextClass(BaseInternalClass):
     name = make_internal_token("Next")
 
-    def lower_arity(self):
-        return 2
-
-    def upper_arity(self):
-        return 2
-
-    def init(self):
-        self.value = None
-        self.next = None
+    @property
+    def instance_class(self):
+        return NextInstance
 
     def call(self, interpreter, arguments):
         self.value = arguments[0]
         self.next = arguments[1]
-        return self
-
-    def internal_set(self, value, next_node):
-        self.value = value
-        self.next = next_node
         return self
 
 
@@ -80,10 +69,15 @@ class NextInstance(BaseInternalInstance):
         NextNextNode,
     )
 
-    def __init__(self, interpreter, value, next_node):
+    def __init__(self, interpreter):
         super().__init__(interpreter)
+        self.value = NEXT_SENTINEL
+        self.next_node = NEXT_SENTINEL
+
+    def set_values(self, value, next_node):
         self.value = value
         self.next_node = next_node
+        return self
 
     def __str__(self):
         return f"{self.class_name}({self.interpreter.stringify(self.value, True)}, {self.next_node})"

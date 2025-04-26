@@ -56,7 +56,7 @@ class TokenType(StrEnum):
     SELF = "SELF"
     SUPER = "SUPER"
     TRUE = "TRUE"
-    VAR = "VAR"
+    VARARGS = "VARARGS"
     WHILE = "WHILE"
 
     EOF = "EOF"
