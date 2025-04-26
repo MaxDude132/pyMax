@@ -206,6 +206,21 @@ class FloatToString(BaseInternalMethod):
         return StringInstance(interpreter).set_value(str(self.instance.value))
 
 
+class FloatToInt(BaseInternalMethod):
+    name = make_internal_token("toInt")
+
+    @property
+    def return_token(self):
+        from .Int import IntClass
+        
+        return IntClass.name
+
+    def call(self, interpreter, arguments):
+        from .Int import IntInstance
+
+        return IntInstance(interpreter).set_value(int(self.instance.value))
+
+
 class FloatIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
 
@@ -234,6 +249,7 @@ class FloatClass(BaseInternalClass):
         FloatNegate,
         FloatIsTrue,
         FloatToString,
+        FloatToInt,
     )
 
     @property

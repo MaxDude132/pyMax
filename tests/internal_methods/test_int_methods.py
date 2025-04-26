@@ -2,7 +2,11 @@ from ..main import run_source, formatted_error
 
 
 def test_toString():
-    assert run_source("print('test'.toString())") == "test"
+    assert run_source("print(1.toString())") == "1"
+
+
+def test_toFloat():
+    assert run_source("print(1.toFloat())") == "1.0"
 
 
 def test_init():

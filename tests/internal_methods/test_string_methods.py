@@ -5,6 +5,18 @@ def test_toString():
     assert run_source("print(1.toString())") == "1"
 
 
+def test_toInt():
+    assert run_source("print('1'.toInt())") == "1"
+    assert run_source("print('1.0'.toInt())") == "1"
+    assert run_source("print('test'.toInt())") == formatted_error("Cannot convert value test to <Int>", 1)
+
+
+def test_toFloat():
+    assert run_source("print('1'.toFloat())") == "1.0"
+    assert run_source("print('1.0'.toFloat())") == "1.0"
+    assert run_source("print('test'.toFloat())") == formatted_error("Cannot convert value test to <Float>", 1)
+
+
 def test_init():
     assert run_source("print(String('test'))") == "test"
     assert run_source("print(String(true))") == formatted_error("Error at 'true': Expected String but got Bool for parameter value in call to String.", 1)

@@ -132,6 +132,53 @@ class StringToString(BaseInternalMethod):
         return StringInstance(interpreter).set_value(self.instance.value)
 
 
+class StringToInt(BaseInternalMethod):
+    name = make_internal_token("toInt")
+
+    @property
+    def return_token(self):
+        from .Int import IntClass
+        
+        return IntClass.name
+
+    def call(self, interpreter, arguments):
+        from .Int import IntInstance, IntClass
+
+        try:
+            return IntInstance(interpreter).set_value(int(self.instance.value))
+        except ValueError:
+            pass
+
+        try:
+            return IntInstance(interpreter).set_value(int(float(self.instance.value)))
+        except ValueError:
+            pass
+
+        raise InternalError(
+            f"Cannot convert value {self.instance.value} to <{IntClass.name.lexeme}>"
+        )
+
+
+class StringToFloat(BaseInternalMethod):
+    name = make_internal_token("toFloat")
+
+    @property
+    def return_token(self):
+        from .Float import FloatClass
+        
+        return FloatClass.name
+
+    def call(self, interpreter, arguments):
+        from .Float import FloatInstance, FloatClass
+
+        try:
+            return FloatInstance(interpreter).set_value(float(self.instance.value))
+        except ValueError:
+            raise InternalError(
+                f"Cannot convert value {self.instance.value} to <{FloatClass.name.lexeme}>"
+            )
+
+
 class StringClass(BaseInternalClass):
     name = make_internal_token("String")
     FIELDS = (
@@ -141,6 +188,8 @@ class StringClass(BaseInternalClass):
         StringEquals,
         StringIsTrue,
         StringToString,
+        StringToInt,
+        StringToFloat,
     )
 
     @property

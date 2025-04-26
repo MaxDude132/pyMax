@@ -5,6 +5,10 @@ def test_toString():
     assert run_source("print(1.0.toString())") == "1.0"
 
 
+def test_toInt():
+    assert run_source("print(1.0.toInt())") == "1"
+
+
 def test_init():
     assert run_source("print(Float(1.3))") == "1.3"
     assert run_source("print(Float(true))") == formatted_error("Error at 'true': Expected Float but got Bool for parameter value in call to Float.", 1)
@@ -16,12 +20,12 @@ def test_equals():
     assert run_source("print(1.2.equals(1))") == formatted_error("Error at '1': Expected Float but got Int for parameter other in call to equals.", 1)
 
 
-def test_is_true():
+def test_isTrue():
     assert run_source("print(0.1.isTrue())") == "true"
     assert run_source("print(0.0.isTrue())") == "false"
 
 
-def test_greater_than():
+def test_greaterThan():
     assert run_source("print(0.1.greaterThan(0.05))") == "true"
     assert run_source("print(0.0.greaterThan(0.05))") == "false"
     assert run_source("print(0.0.greaterThan(true))") == formatted_error("Error at 'true': Expected Float but got Bool for parameter other in call to greaterThan.", 1)

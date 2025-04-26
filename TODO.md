@@ -17,8 +17,8 @@
 - allow passing arguments by name, store methods with their params and types to allow overrides -- DONE
 - write a test suite -- DONE
 - implement type checking -- DONE
-- add string formatting capabilities
-- implement toInt, toFloat, toBool
+- add string formatting capabilities -- DONE
+- implement toInt, toFloat -- DONE
 - improve iterations to be lazily calulated instead of all at once
 - allow classes implementing `next` and becoming generators
 - implement enums
