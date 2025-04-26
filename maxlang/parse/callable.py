@@ -57,16 +57,8 @@ class FunctionCallable(InternalCallable):
 
     def call(self, interpreter: "Interpreter", arguments: list[Any]):
         environment = Environment(self.closure)
-        varargs_arg = self.declaration.params[-1] if self.declaration.params and self.declaration.params[-1].is_varargs else None
-        varargs = None
         for i, argument in enumerate(arguments):
-            if i + 1 >= len(self.declaration.params) and varargs_arg is not None:
-                varargs = argument
-            else:
-                environment.define(self.declaration.params[i].name, argument)
-
-        if varargs:
-            environment.define(varargs_arg.name, varargs)
+            environment.define(self.declaration.params[i].name, argument)
 
         try:
             interpreter.execute_block(self.declaration.body, environment)
