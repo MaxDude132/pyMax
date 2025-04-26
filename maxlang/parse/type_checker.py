@@ -1,4 +1,4 @@
-from .expressions import ExpressionVisitor, Type, Variable, Super, Parameter, Literal, Binary, Call, Pair, Grouping, Unary, Get, Self
+from .expressions import ExpressionVisitor, Type, Variable, Super, Parameter, Literal, Binary, Call, Pair, Grouping, Unary, Get
 from .statements import StatementVisitor, Statement, Lambda, ReturnStatement
 from .interpreter import Interpreter
 from .callable import FunctionCallable, ClassCallable, InternalCallable

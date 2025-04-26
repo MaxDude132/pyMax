@@ -84,7 +84,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             method = left.internal_find_method(method_name)
             value = self.call(expression.operator, method, [right])
             return value
-        except (KeyError, AttributeError) as e:
+        except (KeyError, AttributeError):
             raise InterpreterError(
                 expression.operator,
                 f"{left.class_name} does not implement the {method_name} method.",

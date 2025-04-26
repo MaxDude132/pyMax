@@ -16,10 +16,15 @@
 - implement isTrue (maybe find a better name in the future) -- DONE
 - allow passing arguments by name, store methods with their params and types to allow overrides -- DONE
 - write a test suite -- DONE
-- implement type checking
+- implement type checking -- DONE
 - add string formatting capabilities
 - implement toInt, toFloat, toBool
 - improve iterations to be lazily calulated instead of all at once
+- allow classes implementing `next` and becoming generators
+- implement enums
+- implement pattern matching with `when` as in Kotlin, but where patterns can be chained in a single condition
+- implement interfaces
+- implement proper error handling, with Res returns that can be passed down easily
 - improve error system with different error types, more complete error messages
 - implement addEquals
 - implement substractEquals
