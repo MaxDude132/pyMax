@@ -65,16 +65,18 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
                 return BoolInstance(self).set_value(not is_equal)
             case TokenType.EQUAL_EQUAL:
                 return self.binary_operation(expression, "equals")
-            case TokenType.MINUS:
-                return self.binary_operation(expression, "substract")
             case TokenType.PLUS:
                 return self.binary_operation(expression, "add")
+            case TokenType.MINUS:
+                return self.binary_operation(expression, "substract")
             case TokenType.SLASH:
                 return self.binary_operation(expression, "divide")
             case TokenType.STAR:
                 return self.binary_operation(expression, "multiply")
+            case TokenType.INTERPOLATION:
+                return self.binary_operation(expression, "add")
 
-        return None
+        raise ValueError("Max, you forgot to implement something!", expression.operator)
 
     def binary_operation(self, expression: Binary, method_name: str):
         left = self.evaluate(expression.left)

@@ -487,6 +487,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 method = "greaterThan"
             case TokenType.LESS_EQUAL:
                 method = "greaterThan"
+            case TokenType.INTERPOLATION:
+                method = "add"
 
         if method is None:
             raise ValueError("Max, you forgot to implement something!", expression.operator)

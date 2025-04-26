@@ -169,6 +169,8 @@ class Lexer:
         while self.peek() != delimiter and not self.is_at_end():
             if self.peek() == "\n":
                 self.line += 1
+
+            self.string_interpolation(delimiter)
             self.advance()
 
         if self.is_at_end():
@@ -178,6 +180,33 @@ class Lexer:
 
         value = self.source[self.start + 1 : self.current - 1]
         self.add_token(TokenType.STRING, value)
+
+    def string_interpolation(self, delimiter: str):
+        if not (self.peek() == '$' and self.peek_next() == '{'):
+            return
+        
+        if self.previous() == '\\':
+            self.source = self.source[:self.current-1] + self.source[self.current:]
+            return
+        
+        value = self.source[self.start + 1 : self.current]
+        self.add_token(TokenType.STRING, value)
+        self.start = self.current
+        self.advance()
+        self.advance()
+        self.add_token(TokenType.INTERPOLATION)
+
+        while self.peek() != "}":
+            self.start = self.current
+            self.scan_token()
+
+            if self.is_at_end():
+                self.errors.append(Error(self.line, "Unterminated string interpolation."))
+                break
+
+        self.start = self.current
+        self.add_token(TokenType.INTERPOLATION)
+        self.start = self.current
 
     def number(self):
         while self.peek().isdigit():
@@ -219,6 +248,9 @@ class Lexer:
         char = self.peek()
         self.current += 1
         return char
+
+    def previous(self) -> str:
+        return self.source[self.current - 1]
 
     def peek(self) -> str:
         if self.is_at_end():

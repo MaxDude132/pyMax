@@ -141,7 +141,7 @@ class ExpressionsParser(ParserControl):
         return self.assignment()
 
     def assignment(self) -> Expression:
-        expression = self.or_expression()
+        expression = self.interpolation_expression()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
@@ -154,6 +154,16 @@ class ExpressionsParser(ParserControl):
                 return Set(expression.obj, expression.name, value)
 
             self.error(equals, "Invalid assignment target.")
+
+        return expression
+    
+    def interpolation_expression(self) -> Expression:
+        expression = self.or_expression()
+
+        while self.match(TokenType.INTERPOLATION):
+            operator = self.previous()
+            right = self.or_expression()
+            expression = Binary(expression, operator, right)
 
         return expression
 
