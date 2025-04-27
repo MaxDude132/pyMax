@@ -1,5 +1,5 @@
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
-from ..next import internal_next
+from .Next import internal_next
 from maxlang.errors import InternalError
 
 

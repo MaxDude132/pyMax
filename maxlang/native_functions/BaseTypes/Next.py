@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from .main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token
 
 if TYPE_CHECKING:
     from maxlang.parse.interpreter import Interpreter

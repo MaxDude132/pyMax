@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
-from ..next import internal_next
+from .Next import internal_next
 
 
 def set_value(instance: StringInstance, value: str):

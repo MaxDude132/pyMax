@@ -3,7 +3,7 @@ from __future__ import annotations
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from .Pair import PairInstance, PairClass
 from .VarArgs import VarArgsInstance
-from ..next import internal_next
+from .Next import internal_next
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 

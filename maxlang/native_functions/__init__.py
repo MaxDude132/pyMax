@@ -11,7 +11,7 @@ from .BaseTypes.Bool import BoolClass
 from .BaseTypes.VarArgs import VarArgsClass
 from .BaseTypes.Void import VoidClass
 from .BaseTypes.Object import ObjectClass
-from .next import NextClass
+from .BaseTypes.Next import NextClass
 
 
 BUILTIN_TYPES = {

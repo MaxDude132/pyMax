@@ -13,7 +13,7 @@ from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from maxlang.native_functions import ALL_FUNCTIONS
 from maxlang.native_functions.main import BaseInternalInstance
-from maxlang.native_functions.next import NEXT_SENTINEL
+from maxlang.native_functions.BaseTypes.Next import NEXT_SENTINEL
 from maxlang.native_functions.BaseTypes.Pair import PairInstance
 from maxlang.native_functions.BaseTypes.Bool import BoolInstance
 from maxlang.native_functions.BaseTypes.String import StringInstance
