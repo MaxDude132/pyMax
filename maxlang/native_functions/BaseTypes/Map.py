@@ -3,7 +3,6 @@ from __future__ import annotations
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
 from .Pair import PairInstance, PairClass
 from .VarArgs import VarArgsInstance
-from .Next import internal_next
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -82,16 +81,14 @@ class MapIterate(BaseInternalMethod):
 
     @property
     def return_token(self):
-        from .Object import ObjectClass
+        from ..Interators.MapIterator import MapIteratorClass
 
-        return ObjectClass.name
+        return MapIteratorClass.name
 
     def call(self, interpreter, arguments):
-        values = [
-            PairInstance(interpreter).set_values(k, v)
-            for k, v in self.instance.values.items()
-        ]
-        return internal_next(interpreter, values)
+        from ..Interators.MapIterator import MapIteratorInstance
+
+        return MapIteratorInstance(interpreter).set_value(self.instance)
 
 
 class MapRemove(BaseInternalMethod):

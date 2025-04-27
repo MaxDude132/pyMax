@@ -1,5 +1,4 @@
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
-from .Next import internal_next
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -117,12 +116,14 @@ class ListIterate(BaseInternalMethod):
 
     @property
     def return_token(self):
-        from .Object import ObjectClass
+        from ..Interators.ListIterator import ListIteratorClass
 
-        return ObjectClass.name
+        return ListIteratorClass.name
 
     def call(self, interpreter, arguments):
-        return internal_next(interpreter, self.instance.values)
+        from ..Interators.ListIterator import ListIteratorInstance
+
+        return ListIteratorInstance(interpreter).set_value(self.instance)
 
 
 class ListAdd(BaseInternalMethod):

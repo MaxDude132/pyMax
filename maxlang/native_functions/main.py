@@ -153,7 +153,7 @@ class SharedIsInstance(BaseInternalMethod):
 class BaseInternalClass(ClassCallable):
     name: Token
     FIELDS = ()
-    __COMMON_FIELDS = (
+    _COMMON_FIELDS = (
         SharedIsNotTrue,
         SharedIsInstance,
     )
@@ -167,7 +167,7 @@ class BaseInternalClass(ClassCallable):
 
     def __init__(self, interpreter: Interpreter):
         self.interpreter = interpreter
-        self.methods = {m.name.lexeme: m for m in self.FIELDS + self.__COMMON_FIELDS}
+        self.methods = {m.name.lexeme: m for m in self.FIELDS + self._COMMON_FIELDS}
         self.superclasses = []
         if hasattr(self, "init"):
             self.init()

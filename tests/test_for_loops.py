@@ -12,6 +12,17 @@ for number in test {
     ) == "1\n2\n3"
 
 
+def test_for_loop_on_map():
+    assert run_source(
+        """
+test = Map(1 -> "test", 2 -> "test2")
+for pair in test {
+    print(pair)
+}
+        """
+    ) == "Pair(1, \"test\")\nPair(2, \"test2\")"
+
+
 def test_for_loop_on_string():
     assert run_source(
         """

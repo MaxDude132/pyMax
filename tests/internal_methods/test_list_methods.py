@@ -66,4 +66,4 @@ print(test)
 
 
 def test_iterate():
-    assert run_source("print(List(1, 2).iterate())") == "<Next>(1, <Next>(2, <Next>(NEXT_SENTINEL, NEXT_SENTINEL)))"
+    assert run_source("print(List(1, 2).iterate())") == "<ListIterator>"

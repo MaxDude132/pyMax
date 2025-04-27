@@ -13,6 +13,12 @@ from .BaseTypes.Void import VoidClass
 from .BaseTypes.Object import ObjectClass
 from .BaseTypes.Next import NextClass
 
+from .Interators.IntIterator import IntIteratorClass
+from .Interators.ListIterator import ListIteratorClass
+from .Interators.MapIterator import MapIteratorClass
+from .Interators.StringIterator import StringIteratorClass
+from .Interators.VarArgsIterator import VarArgsIteratorClass
+
 
 BUILTIN_TYPES = {
     func.name: func
@@ -25,6 +31,7 @@ BUILTIN_TYPES = {
         ListClass,
         MapClass,
         PairClass,
+        NextClass,
     )
 }
 
@@ -44,10 +51,16 @@ INTERNAL_TYPES = {
     func.name: func
     for func in (
         # Base types
-        NextClass,
         VarArgsClass,
         VoidClass,
         ObjectClass,
+
+        # Iterators
+        IntIteratorClass,
+        ListIteratorClass,
+        MapIteratorClass,
+        StringIteratorClass,
+        VarArgsIteratorClass,
     )
 }
 

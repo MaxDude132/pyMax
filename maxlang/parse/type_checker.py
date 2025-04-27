@@ -205,7 +205,16 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         return self.check(statement.expression)
 
     def visit_call(self, expression):
-        if self.current_function is not None and hasattr(expression.callee, "name") and expression.callee.name.lexeme == self.current_function.lexeme:
+        if (
+            self.current_function is not None 
+            and hasattr(expression.callee, "name") 
+            and (
+                self.current_class is None
+                or not isinstance(expression.callee, Variable)
+                and isinstance(expression.callee.obj, Get)
+                and expression.callee.obj.name == 'self'
+            ) and expression.callee.name.lexeme == self.current_function.lexeme
+        ):
             # Note: If the call has recursion, the return type will not be known until
             #   the rest of the function has been parsed. In this case, we defer the type 
             #   to be evaluated once the return type has been set. 
@@ -524,8 +533,12 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         if iterate is None:
             self.parser_error(statement.keyword, f"Cannot iterate over instance of {in_name.klass.class_name} that does not implement 'iterate'.")
 
-        if iterate is not None:
-            self.variables[-1][statement.for_name.name.lexeme] = iterate.return_type
+        next_ = iterate.return_type.methods.get("next")
+
+        if next_ is None:
+            self.parser_error(statement.keyword, f"Cannot get next value from iterator {iterate.class_name} that does not implement 'next'.")
+
+        self.variables[-1][statement.for_name.name.lexeme] = next_.return_type
         self.check_many(statement.body)
         self.end_scope()
     

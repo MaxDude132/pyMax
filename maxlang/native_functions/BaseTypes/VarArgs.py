@@ -1,5 +1,4 @@
 from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
-from .Next import internal_next
 from maxlang.errors import InternalError
 
 
@@ -24,8 +23,16 @@ class VarArgsGet(BaseInternalMethod):
 class VarArgsIterate(BaseInternalMethod):
     name = make_internal_token("iterate")
 
+    @property
+    def return_token(self):
+        from ..Interators.VarArgsIterator import VarArgsIteratorClass
+
+        return VarArgsIteratorClass.name
+
     def call(self, interpreter, arguments):
-        return internal_next(interpreter, self.instance.values)
+        from ..Interators.VarArgsIterator import VarArgsIteratorInstance
+
+        return VarArgsIteratorInstance(interpreter).set_value(self.instance)
 
 
 class VarArgsEquals(BaseInternalMethod):

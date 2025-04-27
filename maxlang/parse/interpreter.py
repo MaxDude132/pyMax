@@ -411,19 +411,30 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         for_name = self.evaluate(statement.for_name)
         in_name = self.evaluate(statement.in_name)
         try:
-            node = in_name.internal_find_method("iterate").call(self, [])
+            iterator = in_name.internal_find_method("iterate").call(self, [])
         except InternalError:
             raise InterpreterError(
                 statement.keyword,
                 "Cannot iterate over instance of class that does not implement 'iterate'.",
             )
 
-        while node.value is not NEXT_SENTINEL:
-            self.environment.assign(for_name, node.value)
+        while True:
+            next_ = self.get_next(iterator, statement)
+            self.environment.assign(for_name, next_.value)
             self.execute_block(statement.body, self.environment)
-            node = node.next_node
+            if next_.is_end:
+                break
 
         self.environment = previous
+
+    def get_next(self, iterator, statement):
+        try:
+            return iterator.internal_find_method("next").call(self, [])
+        except InternalError:
+            raise InterpreterError(
+                statement.keyword,
+                f"Iterator {iterator.class_name} that does not implement 'iterate'.",
+            )
 
     def execute_block(self, statements: list[Statement], environment: Environment):
         previous = self.environment

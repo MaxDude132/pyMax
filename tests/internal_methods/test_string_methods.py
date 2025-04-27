@@ -37,3 +37,7 @@ def test_multiply():
     assert run_source("print('a'.multiply(3))") == "aaa"
     assert run_source("print('a'.multiply('3'))") == formatted_error("Error at ''3'': Expected Int but got String for parameter value in call to multiply.", 1)
     assert run_source("print('a'.multiply(3.2))") == formatted_error("Error at '3.2': Expected Int but got Float for parameter value in call to multiply.", 1)
+
+
+def test_iterate():
+    assert run_source("print('test'.iterate())") == "<StringIterator>"

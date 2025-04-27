@@ -57,3 +57,7 @@ def test_divide():
 
 def test_negate():
     assert run_source("print(1.negate())") == "-1"
+
+
+def test_iterate():
+    assert run_source("print(2.iterate())") == "<IntIterator>"

@@ -65,4 +65,4 @@ def test_remove():
 
 
 def test_iterate():
-    assert run_source("print(Map(1 -> 'test', 2 -> 'test2').iterate())") == "<Next>(Pair(1, \"test\"), <Next>(Pair(2, \"test2\"), <Next>(NEXT_SENTINEL, NEXT_SENTINEL)))"
+    assert run_source("print(Map(1 -> 'test', 2 -> 'test2').iterate())") == "<MapIterator>"

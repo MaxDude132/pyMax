@@ -1,7 +1,6 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
-from .Next import internal_next
 
 
 class IntInit(BaseInternalMethod):
@@ -215,10 +214,14 @@ class IntIterate(BaseInternalMethod):
 
     @property
     def return_token(self):
-        return IntClass.name
+        from ..Interators.IntIterator import IntIteratorClass
+
+        return IntIteratorClass.name
 
     def call(self, interpreter, arguments):
-        return internal_next(interpreter, range(self.instance.value))
+        from ..Interators.IntIterator import IntIteratorInstance
+
+        return IntIteratorInstance(interpreter).set_value(self.instance)
 
 
 class IntIsTrue(BaseInternalMethod):
@@ -286,12 +289,6 @@ class IntClass(BaseInternalClass):
     @property
     def instance_class(self):
         return IntInstance
-
-    def lower_arity(self):
-        return 1
-
-    def upper_arity(self):
-        return 1
 
 
 class IntInstance(BaseInternalInstance):

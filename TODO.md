@@ -19,7 +19,7 @@
 - implement type checking -- DONE
 - add string formatting capabilities -- DONE
 - implement toInt, toFloat -- DONE
-- improve iterations to be lazily calulated instead of all at once
+- improve iterations to be lazily calulated instead of all at once -- DONE
 - create a syntax for ranges
 - allow classes implementing `next` and becoming generators
 - implement enums
