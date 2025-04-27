@@ -117,7 +117,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         else:
             start_index = len(args)
 
-            for i, parameter in enumerate(callee.parameters[start_index:]):
+            for parameter in callee.parameters[start_index:]:
                 argument = arguments_dict.get(parameter.name.lexeme)
                 if argument is None and parameter.default is None and not parameter.is_varargs:
                     raise InterpreterError(parameter.name, "Argument required in call.")

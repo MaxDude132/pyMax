@@ -1,6 +1,7 @@
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
+from ..next import internal_next
 
 
 class IntInit(BaseInternalMethod):
@@ -209,6 +210,17 @@ class IntNegate(BaseInternalMethod):
         return IntInstance(interpreter).set_value(-self.instance.value)
 
 
+class IntIterate(BaseInternalMethod):
+    name = make_internal_token("iterate")
+
+    @property
+    def return_token(self):
+        return IntClass.name
+
+    def call(self, interpreter, arguments):
+        return internal_next(interpreter, range(self.instance.value))
+
+
 class IntIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
 
@@ -265,6 +277,7 @@ class IntClass(BaseInternalClass):
         IntEquals,
         IntGreaterThan,
         IntNegate,
+        IntIterate,
         IntIsTrue,
         IntToString,
         IntToFloat,

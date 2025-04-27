@@ -1,0 +1,91 @@
+from .main import run_source, formatted_error
+
+
+def test_for_loop_on_list():
+    assert run_source(
+        """
+test = List(1, 2, 3)
+for number in test {
+    print(number)
+}
+        """
+    ) == "1\n2\n3"
+
+
+def test_for_loop_on_string():
+    assert run_source(
+        """
+test = "123"
+for number in test {
+    print(number)
+}
+        """
+    ) == "1\n2\n3"
+
+
+def test_for_loop_on_int():
+    assert run_source(
+        """
+test = 3
+for number in test {
+    print(number)
+}
+        """
+    ) == "0\n1\n2"
+
+
+def test_for_loop_on_float():
+    assert run_source(
+        """
+test = 3.0
+for number in test {
+    print(number)
+}
+        """
+    ) == formatted_error("Error at 'for': Cannot iterate over instance of <class Float> that does not implement 'iterate'.", 3)
+
+
+def test_for_loop_on_user_defined_class():
+    assert run_source(
+        """
+class CustomIterable {
+    init: varargs Int values {
+        self.values = List()
+        for value in values {
+            self.values.push(value)
+        }
+    }
+}
+
+test = CustomIterable(1, 2, 3)
+
+for number in test {
+    print(number)
+}
+        """
+    ) == formatted_error("Error at 'for': Cannot iterate over instance of <class CustomIterable> that does not implement 'iterate'.", 13)
+
+
+def test_for_loop_on_user_defined_class_defining_iterate():
+    assert run_source(
+        """
+class CustomIterable {
+    init: varargs Int values {
+        self.values = List()
+        for value in values {
+            self.values.push(value)
+        }
+    }
+
+    iterate {
+        return self.values.iterate()
+    }
+}
+
+test = CustomIterable(1, 2, 3)
+
+for number in test {
+    print(number)
+}
+        """
+    ) == "1\n2\n3"

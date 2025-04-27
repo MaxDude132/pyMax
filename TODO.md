@@ -20,6 +20,7 @@
 - add string formatting capabilities -- DONE
 - implement toInt, toFloat -- DONE
 - improve iterations to be lazily calulated instead of all at once
+- create a syntax for ranges
 - allow classes implementing `next` and becoming generators
 - implement enums
 - implement pattern matching with `when` as in Kotlin, but where patterns can be chained in a single condition

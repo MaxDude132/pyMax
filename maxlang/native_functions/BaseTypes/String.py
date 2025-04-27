@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
+from ..next import internal_next
 
 
 def set_value(instance: StringInstance, value: str):
@@ -110,6 +111,17 @@ class StringEquals(BaseInternalMethod):
         )
 
 
+class StringIterate(BaseInternalMethod):
+    name = make_internal_token("iterate")
+
+    @property
+    def return_token(self):
+        return StringClass.name
+
+    def call(self, interpreter, arguments):
+        return internal_next(interpreter, self.instance.value)
+
+
 class StringIsTrue(BaseInternalMethod):
     name = make_internal_token("isTrue")
 
@@ -187,6 +199,7 @@ class StringClass(BaseInternalClass):
         StringMultiply,
         StringEquals,
         StringIsTrue,
+        StringIterate,
         StringToString,
         StringToInt,
         StringToFloat,

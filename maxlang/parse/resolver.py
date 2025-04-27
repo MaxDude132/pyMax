@@ -108,7 +108,7 @@ class Resolver(ExpressionVisitor, StatementVisitor):
 
     def visit_assignment(self, expression):
         self.resolve(expression.value)
-        self.resolve_local(expression, expression.name)
+        self.resolve_local(expression, expression.name.name)
 
     def resolve_local(self, expression: Expression, name: Token, could_be_global: bool = True):
         for i, scope in enumerate(reversed(self.scopes)):

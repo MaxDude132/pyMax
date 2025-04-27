@@ -170,10 +170,10 @@ class ClassCallable(InternalCallable):
 
     @property
     def class_name(self):
-        return self.name.lexeme
+        return f"<class {self.name.lexeme}>"
 
     def __str__(self) -> str:
-        return f"<class {self.class_name}>"
+        return self.class_name
 
 
 class InstanceCallable(InternalCallable):
@@ -194,7 +194,7 @@ class InstanceCallable(InternalCallable):
     def internal_find_method(self, name: str):
         try:
             return self.klass.internal_find_method(name).bind(self)
-        except KeyError:
+        except (KeyError, AttributeError):
             raise InternalError(
                 f"Could not find method {name} on class {self.class_name.lexeme}."
             )

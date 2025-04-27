@@ -15,6 +15,20 @@ test("test")
     )
 
 
+def test_simple_function_arg_passed_by_name():
+    assert (
+        run_source(
+            """
+test: String arg_1, Int arg_2 {
+    print(arg_1, arg_2)
+}
+test(arg_2: 3, arg_1: "test")
+"""
+        )
+        == "test 3"
+    )
+
+
 def test_inexistant_function():
     assert (
         run_source(
@@ -40,6 +54,26 @@ test("test", 0)
 """
         )
         == "test\ntest\ntest"
+    )
+
+
+def test_recursive_function_with_return_type():
+    assert (
+        run_source(
+            """
+test: String arg_1, Int passes {
+    if passes != 0 {
+        arg = arg_1 + passes.toString()
+        return test(arg, passes - 1)
+    }
+    return arg_1
+}
+
+test_ret = test("test", 3)
+print(test_ret)
+"""
+        )
+        == "test321"
     )
 
 
@@ -95,5 +129,55 @@ test: String arg_1 = "test", String arg_2 {
         == formatted_error(
             "Error at 'arg_2': Cannot set a parameter without a default value after a parameter with a default value.",
             2,
+        )
+    )
+
+
+def test_function_with_multiple_return_types_hidden_in_if_statement():
+    assert (
+        run_source(
+            """
+test: String arg_1 {
+    if arg_1 == "test" {
+        return arg_1
+    } else {
+        return 2
+    }
+}
+
+t = test("test")
+print(t)
+"""
+        )
+        == formatted_error(
+            "Error at 'test': Multiple return types found for function.",
+            2,
+        )
+    )
+
+
+def test_function_with_return_in_if_statement():
+    assert (
+        run_source(
+            """
+test: String arg_1 {
+    if arg_1 == "test" {
+        fake = 2
+        2
+        -- Noise just to ensure that only the return counts for typing
+        return arg_1
+    } else {
+        return "else"
+    }
+}
+
+t = 2
+t = test("test")
+print(t)
+"""
+        )
+        == formatted_error(
+            "Error at 't': Cannot redefine variable of type Int to type String.",
+            14,
         )
     )
