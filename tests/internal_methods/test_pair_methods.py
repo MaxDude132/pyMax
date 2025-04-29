@@ -19,4 +19,4 @@ def test_second():
 
 
 def test_is_true():
-    assert run_source("print((1 -> true).isTrue())") == formatted_error("Error at 'isTrue': Function isTrue not found.", 1)
+    assert run_source("print((1 -> true).isTrue())") == formatted_error("Error at 'isTrue': Attribute isTrue not found for class Pair.", 1)

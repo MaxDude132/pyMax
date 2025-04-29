@@ -1,14 +1,30 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token
+from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token, BaseInternalMethod
+from maxlang.parse.expressions import Parameter
 
 
-class NextSentinel:
-    def __str__(self):
-        return "NEXT_SENTINEL"
+class NextInit(BaseInternalMethod):
+    name = make_internal_token("init")
 
+    @property
+    def parameters(self):
+        from .Object import ObjectClass
+        from .Bool import BoolClass
 
-NEXT_SENTINEL = NextSentinel()
+        return [
+            Parameter(
+                [ObjectClass.name],
+                make_internal_token("value")
+            ),
+            Parameter(
+                [BoolClass.name],
+                make_internal_token("is_end")
+            )
+        ]
+
+    def call(self, interpreter, arguments):
+        self.instance.set_values(*arguments)
 
 
 class NextValue(BaseInternalAttribute):
@@ -29,27 +45,26 @@ class NextIsEnd(BaseInternalAttribute):
 
 class NextClass(BaseInternalClass):
     name = make_internal_token("Next")
+    FIELDS = (
+        NextInit,
+        NextValue,
+        NextIsEnd,
+    )
 
     @property
     def instance_class(self):
         return NextInstance
 
-    def call(self, interpreter, arguments):
-        self.value = arguments[0]
-        return self
-
 
 class NextInstance(BaseInternalInstance):
     CLASS = NextClass
-    FIELDS = (
-        NextValue,
-        NextIsEnd,
-    )
 
     def __init__(self, interpreter):
+        from ..BaseTypes.Bool import BoolInstance
+
         super().__init__(interpreter)
-        self.value = NEXT_SENTINEL
-        self.is_end = NEXT_SENTINEL
+        self.value = None
+        self.is_end: BoolInstance = None
 
     def set_values(self, value, is_end):
         self.value = value
@@ -58,3 +73,6 @@ class NextInstance(BaseInternalInstance):
 
     def __str__(self):
         return f"{self.class_name}({self.interpreter.stringify(self.value, True)}, {self.callback})"
+    
+    def __bool__(self):
+        return self.is_end.value

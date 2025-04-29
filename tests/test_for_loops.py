@@ -100,3 +100,43 @@ for number in test {
 }
         """
     ) == "1\n2\n3"
+
+
+def test_for_loop_on_user_defined_class_defining_next():
+    assert run_source(
+        """
+class CustomIterator {
+    init: List iterable {
+        self.iterable = iterable
+        self.index = 0
+    }
+
+    next {
+        is_end = false
+        index = self.index
+        self.index = index + 1
+        return Next(self.iterable.get(index), is_end)
+    }
+}
+
+
+class CustomIterable {
+    init: varargs Int values {
+        self.values = List()
+        for value in values {
+            self.values.push(value)
+        }
+    }
+
+    iterate {
+        return CustomIterator(self.values)
+    }
+}
+
+test = CustomIterable(1, 2, 3)
+
+for number in test {
+    print(number)
+}
+        """
+    ) == "1\n2\n3"

@@ -419,7 +419,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         ret = obj.methods.get(expression.name.lexeme)
 
         if ret is None:
-            return self.get_method_from_super(obj, expression.name)
+            ret = self.get_method_from_super(obj, expression.name)
 
         if ret is None:
             self.parser_error(expression.name, f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.")

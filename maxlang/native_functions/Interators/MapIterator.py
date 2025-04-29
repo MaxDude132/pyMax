@@ -17,8 +17,11 @@ class MapIteratorNext(BaseInternalMethod):
         return ObjectClass.name
 
     def call(self, interpreter, arguments):
+        from ..BaseTypes.Bool import BoolInstance
+
         value = self.instance.pairs[self.instance.current]
-        next_ = NextInstance(interpreter).set_values(value, self.instance.current == self.instance.limit - 1)
+        is_end = BoolInstance(interpreter).set_value(self.instance.current == self.instance.limit - 1)
+        next_ = NextInstance(interpreter).set_values(value, is_end)
         self.instance.current += 1
         return next_
 

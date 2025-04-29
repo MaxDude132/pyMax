@@ -13,7 +13,6 @@ from .statements import StatementVisitor, Statement
 from .environment import Environment, VARIABLE_VALUE_SENTINEL
 from maxlang.native_functions import ALL_FUNCTIONS
 from maxlang.native_functions.main import BaseInternalInstance
-from maxlang.native_functions.BaseTypes.Next import NEXT_SENTINEL
 from maxlang.native_functions.BaseTypes.Pair import PairInstance
 from maxlang.native_functions.BaseTypes.Bool import BoolInstance
 from maxlang.native_functions.BaseTypes.String import StringInstance
@@ -422,7 +421,7 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
             next_ = self.get_next(iterator, statement)
             self.environment.assign(for_name, next_.value)
             self.execute_block(statement.body, self.environment)
-            if next_.is_end:
+            if next_.internal_find_method("is_end").value:
                 break
 
         self.environment = previous
