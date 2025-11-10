@@ -156,7 +156,7 @@ class ExpressionsParser(ParserControl):
             self.error(equals, "Invalid assignment target.")
 
         return expression
-    
+
     def interpolation_expression(self) -> Expression:
         expression = self.or_expression()
 
@@ -255,10 +255,17 @@ class ExpressionsParser(ParserControl):
             keyword = self.previous()
             condition = self.expression()
 
-            self.consume(TokenType.LEFT_BRACE, "Expect '{' before then branch of if expression.")
+            self.consume(
+                TokenType.LEFT_BRACE, "Expect '{' before then branch of if expression."
+            )
             then_branch = self.expression()
-            self.consume(TokenType.RIGHT_BRACE, "Expect '}' after then branch of if expression.")
-            self.consume(TokenType.ELSE, "Expect 'else' clause after then branch of if expression.")
+            self.consume(
+                TokenType.RIGHT_BRACE, "Expect '}' after then branch of if expression."
+            )
+            self.consume(
+                TokenType.ELSE,
+                "Expect 'else' clause after then branch of if expression.",
+            )
             self.match(TokenType.LEFT_BRACE)
             else_branch = self.expression()
             self.match(TokenType.RIGHT_BRACE)
@@ -360,13 +367,16 @@ class ExpressionsParser(ParserControl):
             has_had_varargs = False
             while True:
                 is_varargs = self.match(TokenType.VARARGS)
-                type_ = self.consume(TokenType.IDENTIFIER, "Expect type.")
+                type_ = self.build_type()
                 name = self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
 
                 if has_had_varargs:
-                    raise self.error(name, "varargs parameter must be the last parameter of a function.")
+                    raise self.error(
+                        name,
+                        "varargs parameter must be the last parameter of a function.",
+                    )
                 has_had_varargs = is_varargs
-                
+
                 default = None
                 if self.match(TokenType.EQUAL):
                     default = self.expression()
@@ -378,7 +388,9 @@ class ExpressionsParser(ParserControl):
                         "Cannot set a parameter without a default value after a parameter with a default value.",
                     )
 
-                parameters.append(Parameter([type_], name, default, is_varargs=is_varargs))
+                parameters.append(
+                    Parameter([type_], name, default, is_varargs=is_varargs)
+                )
                 if not self.match(TokenType.COMMA) or self.check_next(
                     TokenType.LEFT_BRACE
                 ):
@@ -397,6 +409,7 @@ class StatementsParser(ExpressionsParser):
             if self.check(TokenType.IDENTIFIER) and (
                 self.check_next(TokenType.LEFT_BRACE)
                 or self.check_next(TokenType.COLON)
+                or self.check_next(TokenType.LEFT_CHEVRON)
             ):
                 return self.function("function")
 
@@ -449,7 +462,6 @@ class StatementsParser(ExpressionsParser):
         obj = Function(name, self.function_body(kind, name))
         self.current_function_name = previous_function_name
         return obj
-
 
     def var_declaration(self) -> Statement:
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")

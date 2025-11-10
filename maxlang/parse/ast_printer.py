@@ -37,7 +37,9 @@ class AstPrinter(Visitor):
         return self.parenthesize(f"getvar {expression.name.lexeme}")
 
     def visit_assignment(self, expression):
-        return self.parenthesize(f"setvar {expression.name.name.lexeme}", expression.value)
+        return self.parenthesize(
+            f"setvar {expression.name.name.lexeme}", expression.value
+        )
 
     def visit_expression_statement(self, statement):
         return statement.expression.accept(self)
@@ -88,7 +90,7 @@ class AstPrinter(Visitor):
     def visit_function(self, statement, function_type="function"):
         string = (
             self.parenthesize(
-                f"{function_type} {statement.name.lexeme}({', '.join(f"{'varargs ' if s.is_varargs else ''}{s.types[0].lexeme} {s.name.lexeme}" for s in statement.function.params)})"
+                f"{function_type} {statement.name.lexeme}({', '.join(f'{"varargs " if s.is_varargs else ""}{s.types[0].name.lexeme} {s.name.lexeme}' for s in statement.function.params)})"
             )
             + "\n"
         )
@@ -149,7 +151,7 @@ class AstPrinter(Visitor):
     def visit_argument(self, expression):
         if expression.name is None:
             return expression.value.accept(self)
-        
+
         return f"{expression.name.lexeme}:{expression.value.accept(self)}"
 
     def parenthesize(self, name: str, *expressions: Expression) -> str:

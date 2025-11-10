@@ -55,7 +55,7 @@ class Max:
 
         if self.had_error:
             return
-        
+
         type_checker = TypeChecker(interpreter, self.parser_error)
         type_checker.launch(statements)
 

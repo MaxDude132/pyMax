@@ -118,7 +118,11 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
             for parameter in callee.parameters[start_index:]:
                 argument = arguments_dict.get(parameter.name.lexeme)
-                if argument is None and parameter.default is None and not parameter.is_varargs:
+                if (
+                    argument is None
+                    and parameter.default is None
+                    and not parameter.is_varargs
+                ):
                     raise InterpreterError(parameter.name, "Argument required in call.")
 
                 if parameter.is_varargs:
@@ -288,7 +292,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return PairInstance(self).set_values(
             self.evaluate(expression.left), self.evaluate(expression.right)
         )
-    
+
     def visit_if_expression(self, expression):
         isTrue = self.evaluate(expression.condition)
 

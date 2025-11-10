@@ -1,0 +1,9 @@
+test: String val {
+    print(val)
+}
+
+toString<T>: T val {
+    return val * 2
+}
+
+val = toString("text")
