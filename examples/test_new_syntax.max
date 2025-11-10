@@ -1,0 +1,5 @@
+simple_test: arg {
+    print(arg)
+}
+
+simple_test("hello world")

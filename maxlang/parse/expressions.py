@@ -177,10 +177,11 @@ class Assignment(Expression):
 
 @dataclass
 class Parameter:
-    types: list[Token]
     name: Token
     default: Expression | None = None
     is_varargs: bool = False
+    attributes_accessed: list[Token] = field(default_factory=list)
+    methods_called: list[Token] = field(default_factory=list)
 
 
 @dataclass

@@ -367,7 +367,6 @@ class ExpressionsParser(ParserControl):
             has_had_varargs = False
             while True:
                 is_varargs = self.match(TokenType.VARARGS)
-                type_ = self.build_type()
                 name = self.consume(TokenType.IDENTIFIER, "Expect parameter name.")
 
                 if has_had_varargs:
@@ -388,9 +387,7 @@ class ExpressionsParser(ParserControl):
                         "Cannot set a parameter without a default value after a parameter with a default value.",
                     )
 
-                parameters.append(
-                    Parameter([type_], name, default, is_varargs=is_varargs)
-                )
+                parameters.append(Parameter(name, default, is_varargs=is_varargs))
                 if not self.match(TokenType.COMMA) or self.check_next(
                     TokenType.LEFT_BRACE
                 ):

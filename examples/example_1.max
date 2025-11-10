@@ -1,9 +1,19 @@
-test: String val {
-    print(val)
+class Test {
+    init {
+        self.value = "test"
+    }
+
+    rise {
+        print(self.value)
+    }
 }
 
-toString<T>: T val {
-    return val * 2
+test = Test()
+badTest = "test"
+
+riser: testObj {
+    testObj.rise()
 }
 
-val = toString("text")
+riser(test)
+riser(badTest)

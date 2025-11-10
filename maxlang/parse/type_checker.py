@@ -94,6 +94,43 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         self.current_function_return_types = []
         self.current_class: Token | None = None
         self.current_method_calls_super = False
+        self.current_function_parameters: list[Parameter] = []
+
+    def get_current_function_parameters(self) -> list[Parameter]:
+        return (
+            self.current_function_parameters if self.current_function_parameters else []
+        )
+
+    def find_parameter(self, name: str) -> Parameter | None:
+        for param in self.current_function_parameters:
+            if param.name.lexeme == name:
+                return param
+        return None
+
+    def validate_structural_requirements(
+        self,
+        obj_type: Type,
+        required_attributes: list[Token],
+        required_methods: list[Token],
+        call_token: Token,
+    ):
+        for attr in required_attributes:
+            if attr.lexeme not in obj_type.methods and not self.get_method_from_super(
+                obj_type, attr
+            ):
+                self.parser_error(
+                    call_token,
+                    f"Object of type {obj_type.klass.name.lexeme if hasattr(obj_type.klass, 'name') else str(obj_type.klass)} does not have required attribute '{attr.lexeme}'.",
+                )
+
+        for method in required_methods:
+            if method.lexeme not in obj_type.methods and not self.get_method_from_super(
+                obj_type, method
+            ):
+                self.parser_error(
+                    call_token,
+                    f"Object of type {obj_type.klass.name.lexeme if hasattr(obj_type.klass, 'name') else str(obj_type.klass)} does not have required method '{method.lexeme}'.",
+                )
 
     def launch(self, statements: list[Statement]):
         try:
@@ -214,6 +251,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         self.current_function = statement.token
         previous_return_types = self.current_function_return_types
         self.current_function_return_types = []
+        previous_parameters = self.current_function_parameters
+        self.current_function_parameters = statement.params
 
         self.begin_scope()
         self.set_parameters(statement.params)
@@ -231,6 +270,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
         self.current_function = previous_function
         self.current_function_return_types = previous_return_types
+        self.current_function_parameters = previous_parameters
 
         return Type(
             FunctionCallable(
@@ -250,8 +290,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
     def set_parameters(self, parameters: list[Parameter]):
         for parameter in parameters:
-            type_ = self.resolve(parameter.types[0].name)
-            self.variables[-1][parameter.name.lexeme] = type_
+            # Create a structural type that will track accessed attributes/methods
+            self.variables[-1][parameter.name.lexeme] = Type(object, parameter.name)
+        pass
 
     def get_return_type(self) -> Type | None:
         ret = None
@@ -268,6 +309,22 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         return self.check(statement.expression)
 
     def visit_call(self, expression):
+        # Track method calls on parameters
+        if (
+            isinstance(expression.callee, Get)
+            and isinstance(expression.callee.obj, Variable)
+            and self.current_function is not None
+            and expression.callee.obj.name.lexeme
+            in [p.name.lexeme for p in self.get_current_function_parameters()]
+        ):
+            # Track the method call on the parameter
+            param = self.find_parameter(expression.callee.obj.name.lexeme)
+            if param is not None:
+                param.methods_called.append(expression.callee.name)
+
+            # For parameter method calls, return a generic object type since we don't know the return type yet
+            return Type(object, expression.callee.name)
+
         if (
             self.current_function is not None
             and hasattr(expression.callee, "name")
@@ -287,33 +344,59 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         callee_type = self.check(expression.callee)
         if callee_type is None:
             try:
-                callee_type = self.get_type(expression.callee.name, False)
-                expression.callee.type_ = callee_type
-            except AttributeError:
+                if hasattr(expression.callee, "name"):
+                    callee_type = self.get_type(expression.callee.name, False)
+                    expression.callee.type_ = callee_type
+            except (AttributeError, TypeError):
                 pass
 
         if callee_type is None:
-            self.parser_error(
-                expression.callee.name,
-                f"Function {expression.callee.name.lexeme} not found.",
-            )
-            return
+            # For Get expressions (method calls), this is handled in visit_get
+            if isinstance(expression.callee, Get):
+                return Type(object, expression.callee.name)
+
+            if hasattr(expression.callee, "name"):
+                self.parser_error(
+                    expression.callee.name,
+                    f"Function {expression.callee.name.lexeme} not found.",
+                )
+            return None
 
         try:
             parameters = self.get_parameters(
                 callee_type.klass, expression.arguments, callee_type.parameters
             )
         except InternalError as e:
-            self.parser_error(
-                expression.callee.name, str(e).format(expression.callee.name.lexeme)
-            )
+            if hasattr(expression.callee, "name"):
+                self.parser_error(
+                    expression.callee.name, str(e).format(expression.callee.name.lexeme)
+                )
 
         callee_name = (
             expression.callee.keyword
             if isinstance(expression.callee, Super)
-            else expression.callee.name
+            else getattr(expression.callee, "name", expression.callee)
         )
-        self.validate_parameters(expression.arguments, parameters, callee_name)
+        self.validate_parameters(expression.arguments, parameters)
+
+        # Perform structural validation for function calls
+        if hasattr(callee_type.klass, "declaration") and isinstance(
+            callee_type.klass.declaration, Lambda
+        ):
+            function_params = callee_type.klass.declaration.params
+            # Match arguments with parameters and validate structural requirements
+            for i, (arg, param) in enumerate(
+                zip(expression.arguments, function_params)
+            ):
+                if param.attributes_accessed or param.methods_called:
+                    arg_type = self.check(arg)
+                    if arg_type:
+                        self.validate_structural_requirements(
+                            arg_type,
+                            param.attributes_accessed,
+                            param.methods_called,
+                            callee_name,
+                        )
 
         return callee_type.return_type
 
@@ -375,7 +458,6 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         self,
         all_arguments: list[Argument],
         parameters: list[Parameter],
-        callee_name: Token,
     ):
         arguments = [arg for arg in all_arguments if arg.name is None]
         argument_names = [self.get_arg_name(arg) for arg in arguments]
@@ -395,18 +477,6 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
                 argument_names.append(name)
                 argument_types.append(type_)
-
-        for arg_name, arg_type, param in zip(
-            argument_names, argument_types, parameters, strict=True
-        ):
-            if not self.validate_type(arg_type, param.types[0]):
-                got_arg_name = (
-                    arg_type.klass.name.lexeme if arg_type is not None else None
-                )
-                self.parser_error(
-                    arg_name,
-                    f"Expected {param.types[0].lexeme} but got {got_arg_name} for parameter {param.name.lexeme} in call to {callee_name.lexeme}.",
-                )
 
     def visit_variable(self, expression):
         if expression.type_ is not None:
@@ -516,12 +586,28 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
     def visit_get(self, expression):
         obj = self.check(expression.obj)
+
+        # If we're accessing an attribute on a parameter, track it
+        if (
+            isinstance(expression.obj, Variable)
+            and self.current_function is not None
+            and expression.obj.name.lexeme
+            in [p.name.lexeme for p in self.get_current_function_parameters()]
+        ):
+            # Track the attribute access on the parameter
+            param = self.find_parameter(expression.obj.name.lexeme)
+            if param is not None:
+                param.attributes_accessed.append(expression.name)
+
+            # For parameter attribute access, return a generic object type since we don't know the type yet
+            return Type(object, expression.name)
+
         ret = obj.methods.get(expression.name.lexeme)
 
         if ret is None:
             ret = self.get_method_from_super(obj, expression.name)
 
-        if ret is None:
+        if ret is None and not isinstance(obj.klass, type):
             self.parser_error(
                 expression.name,
                 f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.",
@@ -638,7 +724,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             )
 
         argument = Argument(None, expression.right)
-        self.validate_parameters([argument], obj.parameters, obj.klass.name)
+        self.validate_parameters([argument], obj.parameters)
 
         return obj.return_type
 
