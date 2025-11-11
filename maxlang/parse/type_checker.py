@@ -381,38 +381,23 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             expression.arguments, parameters, callee_type.klass, callee_name
         )
 
-        # Perform structural validation for function calls
+        params_to_check = parameters
         if hasattr(callee_type.klass, "declaration") and isinstance(
             callee_type.klass.declaration, Lambda
         ):
-            function_params = callee_type.klass.declaration.params
-            # Match arguments with parameters and validate structural requirements
-            for i, (arg, param) in enumerate(
-                zip(expression.arguments, function_params)
-            ):
-                if param.attributes_accessed or param.methods_called:
-                    arg_type = self.check(arg)
-                    if arg_type:
-                        arg_token = self.get_arg_name(arg)
-                        self.validate_structural_requirements(
-                            arg_type,
-                            param.attributes_accessed,
-                            param.methods_called,
-                            arg_token,
-                        )
-        # Also check structural requirements for built-in methods
-        elif parameters:
-            for i, (arg, param) in enumerate(zip(expression.arguments, parameters)):
-                if param.attributes_accessed or param.methods_called:
-                    arg_type = self.check(arg)
-                    if arg_type:
-                        arg_token = self.get_arg_name(arg)
-                        self.validate_structural_requirements(
-                            arg_type,
-                            param.attributes_accessed,
-                            param.methods_called,
-                            arg_token,
-                        )
+            params_to_check = callee_type.klass.declaration.params
+
+        for arg, param in zip(expression.arguments, params_to_check):
+            if param.attributes_accessed or param.methods_called:
+                arg_type = self.check(arg)
+                if arg_type:
+                    arg_token = self.get_arg_name(arg)
+                    self.validate_structural_requirements(
+                        arg_type,
+                        param.attributes_accessed,
+                        param.methods_called,
+                        arg_token,
+                    )
 
         return callee_type.return_type
 
