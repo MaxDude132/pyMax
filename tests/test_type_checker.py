@@ -20,14 +20,14 @@ def test_type_check_user_defined_function_wrong_type():
         run_source(
             """
 test: param1, param2 {
-    print(param1, param2)
+    print(param1.toLower(), param2.to_lower())
 }
 
-test("test", param2: "test2")
+test("test", param2: 2)
             """
         )
     ) == formatted_error(
-        "Error at '\"test2\"': Expected Int but got String for parameter param2 in call to test.",
+        "Error at '2': Object of type Int does not have required method 'to_lower'.",
         6,
     )
 
@@ -52,7 +52,7 @@ def test_type_check_user_defined_function_with_variable_wrong_type():
         run_source(
             """
 test: param1, param2 {
-    print(param1, param2)
+    print(param1.toLower(), param2)
 }
 
 test_param_1 = 2
@@ -60,7 +60,7 @@ test(test_param_1, param2: 2)
             """
         )
     ) == formatted_error(
-        "Error at 'test_param_1': Expected String but got Int for parameter param1 in call to test.",
+        "Error at 'test_param_1': Object of type Int does not have required method 'toLower'.",
         7,
     )
 
