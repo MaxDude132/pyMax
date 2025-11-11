@@ -17,7 +17,6 @@ class BoolInit(BaseInternalMethod):
     def parameters(self):
         return [
             Parameter(
-                [self.instance.klass.name],
                 make_internal_token("value"),
                 methods_called=[make_internal_token("toBool")],
             )
@@ -32,7 +31,7 @@ class BoolEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):

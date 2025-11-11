@@ -14,7 +14,7 @@ class ObjectEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def return_token(self):

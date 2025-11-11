@@ -18,9 +18,7 @@ class MapInit(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter([PairClass.name], make_internal_token("items"), is_varargs=True)
-        ]
+        return [Parameter(make_internal_token("items"), is_varargs=True)]
 
     @property
     def allowed_types(self):
@@ -35,7 +33,7 @@ class MapPush(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([PairClass.name], make_internal_token("item"))]
+        return [Parameter(make_internal_token("item"))]
 
     @property
     def allowed_types(self):
@@ -56,9 +54,7 @@ class MapGet(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-
-        return [Parameter([ObjectClass.name], make_internal_token("key"))]
+        return [Parameter(make_internal_token("key"))]
 
     @property
     def return_token(self):
@@ -96,9 +92,7 @@ class MapRemove(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-
-        return [Parameter([ObjectClass.name], make_internal_token("key"))]
+        return [Parameter(make_internal_token("key"))]
 
     @property
     def return_token(self):
@@ -123,7 +117,7 @@ class MapAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("key"))]
+        return [Parameter(make_internal_token("key"))]
 
     @property
     def allowed_types(self):
@@ -148,7 +142,7 @@ class MapEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):

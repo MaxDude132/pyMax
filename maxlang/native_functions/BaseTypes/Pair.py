@@ -14,11 +14,9 @@ class PairInit(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-
         return [
-            Parameter([ObjectClass.name], make_internal_token("left")),
-            Parameter([ObjectClass.name], make_internal_token("right")),
+            Parameter(make_internal_token("left")),
+            Parameter(make_internal_token("right")),
         ]
 
     def call(self, interpreter, arguments):
@@ -56,7 +54,7 @@ class PairEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def return_type(self):

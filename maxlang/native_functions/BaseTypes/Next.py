@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalAttribute, make_internal_token, BaseInternalMethod
+from ..main import (
+    BaseInternalClass,
+    BaseInternalInstance,
+    BaseInternalAttribute,
+    make_internal_token,
+    BaseInternalMethod,
+)
 from maxlang.parse.expressions import Parameter
 
 
@@ -9,18 +15,9 @@ class NextInit(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-        from .Bool import BoolClass
-
         return [
-            Parameter(
-                [ObjectClass.name],
-                make_internal_token("value")
-            ),
-            Parameter(
-                [BoolClass.name],
-                make_internal_token("is_end")
-            )
+            Parameter(make_internal_token("value")),
+            Parameter(make_internal_token("is_end")),
         ]
 
     def call(self, interpreter, arguments):
@@ -73,6 +70,6 @@ class NextInstance(BaseInternalInstance):
 
     def __str__(self):
         return f"{self.class_name}({self.interpreter.stringify(self.value, True)}, {self.callback})"
-    
+
     def __bool__(self):
         return self.is_end.value

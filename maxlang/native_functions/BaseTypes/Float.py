@@ -16,7 +16,6 @@ class FloatInit(BaseInternalMethod):
     def parameters(self):
         return [
             Parameter(
-                [self.instance.klass.name],
                 make_internal_token("value"),
                 methods_called=[make_internal_token("toFloat")],
             )
@@ -31,7 +30,7 @@ class FloatAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -57,7 +56,7 @@ class FloatSubstract(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -83,7 +82,7 @@ class FloatMultiply(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -109,7 +108,7 @@ class FloatDivide(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -138,7 +137,7 @@ class FloatEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -171,7 +170,7 @@ class FloatGreaterThan(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):

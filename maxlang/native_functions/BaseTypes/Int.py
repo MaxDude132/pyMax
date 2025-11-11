@@ -16,7 +16,6 @@ class IntInit(BaseInternalMethod):
     def parameters(self):
         return [
             Parameter(
-                [self.instance.klass.name],
                 make_internal_token("value"),
                 methods_called=[make_internal_token("toInt")],
             )
@@ -31,7 +30,7 @@ class IntAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -61,7 +60,7 @@ class IntSubstract(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -91,7 +90,7 @@ class IntMultiply(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -121,7 +120,7 @@ class IntDivide(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -156,7 +155,7 @@ class IntEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def return_token(self):
@@ -183,7 +182,7 @@ class IntGreaterThan(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):

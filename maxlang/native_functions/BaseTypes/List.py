@@ -14,11 +14,7 @@ class ListInit(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-
-        return [
-            Parameter([ObjectClass.name], make_internal_token("items"), is_varargs=True)
-        ]
+        return [Parameter(make_internal_token("items"), is_varargs=True)]
 
     def call(self, interpreter, arguments):
         self.instance.set_values(*arguments[0].values)
@@ -29,9 +25,7 @@ class ListPush(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Object import ObjectClass
-
-        return [Parameter([ObjectClass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     def call(self, interpreter, arguments):
         self.instance.values.append(arguments[0])
@@ -58,9 +52,7 @@ class ListGet(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Int import IntClass
-
-        return [Parameter([IntClass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -86,7 +78,7 @@ class ListExtend(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -124,7 +116,7 @@ class ListAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -146,9 +138,7 @@ class ListMultiply(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Int import IntClass
-
-        return [Parameter([IntClass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
@@ -174,7 +164,7 @@ class ListEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):

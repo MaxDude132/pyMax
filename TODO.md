@@ -21,7 +21,7 @@
 - implement toInt, toFloat -- DONE
 - improve iterations to be lazily calulated instead of all at once -- DONE
 - allow classes implementing `next` and becoming generators -- DONE
-- implement syntax and logic for generics, to be used with List and Map, for example
+- implement static duck typing
 - create a syntax for ranges
 - implement enums
 - implement pattern matching with `when` as in Kotlin, but where patterns can be chained in a single condition

@@ -23,7 +23,6 @@ class StringInit(BaseInternalMethod):
     def parameters(self):
         return [
             Parameter(
-                [self.instance.klass.name],
                 make_internal_token("value"),
                 methods_called=[make_internal_token("toString")],
             )
@@ -40,7 +39,6 @@ class StringAdd(BaseInternalMethod):
     def parameters(self):
         return [
             Parameter(
-                [self.instance.klass.name],
                 make_internal_token("value"),
                 methods_called=[make_internal_token("toString")],
             )
@@ -64,9 +62,7 @@ class StringMultiply(BaseInternalMethod):
 
     @property
     def parameters(self):
-        from .Int import IntClass
-
-        return [Parameter([IntClass.name], make_internal_token("value"))]
+        return [Parameter(make_internal_token("value"))]
 
     @property
     def allowed_types(self):
@@ -92,7 +88,7 @@ class StringEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+        return [Parameter(make_internal_token("other"))]
 
     @property
     def allowed_types(self):
