@@ -141,9 +141,7 @@ class FloatEquals(BaseInternalMethod):
 
     @property
     def allowed_types(self):
-        from .Int import IntClass
-
-        return [FloatClass.name, IntClass.name]
+        return [FloatClass.name]
 
     @property
     def return_token(self):
@@ -235,6 +233,17 @@ class FloatToInt(BaseInternalMethod):
         return IntInstance(interpreter).set_value(int(self.instance.value))
 
 
+class FloatToFloat(BaseInternalMethod):
+    name = make_internal_token("toFloat")
+
+    @property
+    def return_token(self):
+        return FloatClass.name
+
+    def call(self, interpreter, arguments):
+        return FloatInstance(interpreter).set_value(float(self.instance.value))
+
+
 class FloatToBool(BaseInternalMethod):
     name = make_internal_token("toBool")
 
@@ -264,6 +273,7 @@ class FloatClass(BaseInternalClass):
         FloatToBool,
         FloatToString,
         FloatToInt,
+        FloatToFloat,
     )
 
     @property
@@ -293,12 +303,12 @@ class FloatInstance(BaseInternalInstance):
             self.value = value.value
         elif hasattr(value, "internal_find_method"):
             to_float_method = value.internal_find_method("toFloat")
-            bool_value = to_float_method.call(self.interpreter, [])
-            if not is_instance(self.interpreter, bool_value, FloatClass.name):
+            float_value = to_float_method.call(self.interpreter, [])
+            if not is_instance(self.interpreter, float_value, FloatClass.name):
                 raise InternalError(
                     f"toFloat method did not return a Float for {value.class_name}."
                 )
-            self.value = bool_value.value
+            self.value = float_value.value
         else:
             raise InternalError(f"Invalid value passed to {self.class_name}.")
 

@@ -66,6 +66,6 @@ def test_add():
 class WithoutToString {}
 print('Value: '.add(WithoutToString()))
 """) == formatted_error(
-        "Error at 'add': Object of type WithoutToString does not have required method 'toString'.",
+        "Error at 'WithoutToString': Object of type WithoutToString does not have required method 'toString'.",
         3,
     )

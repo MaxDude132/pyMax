@@ -377,7 +377,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             if isinstance(expression.callee, Super)
             else getattr(expression.callee, "name", expression.callee)
         )
-        self.validate_parameters(expression.arguments, parameters)
+        self.validate_parameters(
+            expression.arguments, parameters, callee_type.klass, callee_name
+        )
 
         # Perform structural validation for function calls
         if hasattr(callee_type.klass, "declaration") and isinstance(
@@ -391,11 +393,25 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 if param.attributes_accessed or param.methods_called:
                     arg_type = self.check(arg)
                     if arg_type:
+                        arg_token = self.get_arg_name(arg)
                         self.validate_structural_requirements(
                             arg_type,
                             param.attributes_accessed,
                             param.methods_called,
-                            callee_name,
+                            arg_token,
+                        )
+        # Also check structural requirements for built-in methods
+        elif parameters:
+            for i, (arg, param) in enumerate(zip(expression.arguments, parameters)):
+                if param.attributes_accessed or param.methods_called:
+                    arg_type = self.check(arg)
+                    if arg_type:
+                        arg_token = self.get_arg_name(arg)
+                        self.validate_structural_requirements(
+                            arg_type,
+                            param.attributes_accessed,
+                            param.methods_called,
+                            arg_token,
                         )
 
         return callee_type.return_type
@@ -458,6 +474,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         self,
         all_arguments: list[Argument],
         parameters: list[Parameter],
+        callee_klass: InternalCallable = None,
+        callee_name: Token = None,
     ):
         arguments = [arg for arg in all_arguments if arg.name is None]
         argument_names = [self.get_arg_name(arg) for arg in arguments]
@@ -472,11 +490,74 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                     name = self.get_arg_name(named_arguments[parameter.name.lexeme])
                     type_ = self.check(named_arguments[parameter.name.lexeme])
                 else:
-                    name = parameter.name
-                    type_ = self.resolve(parameter.types[0])
+                    # Parameter with default value - skip validation
+                    continue
 
                 argument_names.append(name)
                 argument_types.append(type_)
+
+        # Validate types for built-in methods that have allowed_types
+        # For classes, check the init method; for methods, check the method itself
+        method_to_check = None
+        if callee_klass and hasattr(callee_klass, "internal_find_method"):
+            try:
+                # This is a class, get its init method and bind it to an instance
+                init_method_class = callee_klass.internal_find_method("init")
+                instance = callee_klass.instance_class(self.interpreter)
+                method_to_check = init_method_class.bind(instance)
+            except Exception:
+                pass
+        elif callee_klass:
+            # This is already a method
+            method_to_check = callee_klass
+
+        if method_to_check and hasattr(method_to_check, "allowed_types"):
+            try:
+                allowed_types = method_to_check.allowed_types
+            except AttributeError:
+                allowed_types = None
+            if allowed_types:
+                # Check if this is a varargs parameter
+                is_varargs = (
+                    parameters and parameters[0].is_varargs if parameters else False
+                )
+
+                # For varargs, check all arguments; otherwise just the first
+                args_to_check = argument_types if is_varargs else argument_types[:1]
+                names_to_check = argument_names if is_varargs else argument_names[:1]
+
+                for arg_type, arg_name in zip(args_to_check, names_to_check):
+                    # Check if the argument type matches any allowed type
+                    type_match = any(
+                        self.validate_type(arg_type, allowed_type)
+                        for allowed_type in allowed_types
+                    )
+
+                    if not type_match:
+                        # Generate error message
+                        if len(allowed_types) == 1:
+                            expected_str = allowed_types[0].lexeme
+                        else:
+                            expected_str = " or ".join(t.lexeme for t in allowed_types)
+
+                        actual_type = (
+                            arg_type.klass.name.lexeme
+                            if hasattr(arg_type.klass, "name")
+                            else str(arg_type.klass)
+                        )
+                        param_name = (
+                            parameters[0].name.lexeme if parameters else "parameter"
+                        )
+                        func_name = (
+                            callee_name.lexeme
+                            if callee_name and hasattr(callee_name, "lexeme")
+                            else str(callee_klass)
+                        )
+
+                        self.parser_error(
+                            arg_name,
+                            f"Expected {expected_str} but got {actual_type} for parameter {param_name} in call to {func_name}.",
+                        )
 
     def visit_variable(self, expression):
         if expression.type_ is not None:
@@ -724,7 +805,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             )
 
         argument = Argument(None, expression.right)
-        self.validate_parameters([argument], obj.parameters)
+        method_token = make_internal_token(method)
+        self.validate_parameters([argument], obj.parameters, obj.klass, method_token)
 
         return obj.return_type
 
