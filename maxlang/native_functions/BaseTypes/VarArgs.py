@@ -1,4 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalMethod,
+    BaseInternalInstance,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 
 
@@ -15,9 +21,7 @@ class VarArgsGet(BaseInternalMethod):
         try:
             return self.instance.values[int(arguments[0].value)]
         except (ValueError, IndexError, TypeError, AttributeError):
-            raise InternalError(
-                f"{arguments[0]} is not a valid index."
-            )
+            raise InternalError(f"{arguments[0]} is not a valid index.")
 
 
 class VarArgsIterate(BaseInternalMethod):
@@ -55,8 +59,8 @@ class VarArgsEquals(BaseInternalMethod):
         )
 
 
-class VarArgsIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class VarArgsToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -75,7 +79,7 @@ class VarArgsToString(BaseInternalMethod):
             for v in self.instance.values
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({', '.join(stringified)})"
         )
 
 
@@ -85,7 +89,7 @@ class VarArgsClass(BaseInternalClass):
         VarArgsGet,
         VarArgsIterate,
         VarArgsEquals,
-        VarArgsIsTrue,
+        VarArgsToBool,
         VarArgsToString,
     )
 

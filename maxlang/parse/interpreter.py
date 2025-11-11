@@ -177,7 +177,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
     def visit_logical(self, expression):
         left = self.evaluate(expression.left)
-        isTrue = self.unary_operation(expression.operator, expression.left, "isTrue")
+        isTrue = self.unary_operation(expression.operator, expression.left, "toBool")
 
         if expression.operator.type_ == TokenType.OR:
             if isTrue:
@@ -237,7 +237,7 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         match expression.operator.type_:
             case TokenType.BANG:
                 return self.unary_operation(
-                    expression.operator, expression.right, "isNotTrue", "isTrue"
+                    expression.operator, expression.right, "isNotTrue", "toBool"
                 )
             case TokenType.MINUS:
                 return self.unary_operation(
@@ -298,11 +298,11 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
 
         if not isinstance(isTrue, BoolInstance):
             try:
-                isTrue = isTrue.internal_find_method("isTrue").call(self, [])
+                isTrue = isTrue.internal_find_method("toBool").call(self, [])
             except KeyError:
                 raise InterpreterError(
                     expression.keyword,
-                    f"class {isTrue.class_name} does not implement the isTrue method.",
+                    f"class {isTrue.class_name} does not implement the toBool method.",
                 )
 
         if isTrue.value:
@@ -395,11 +395,11 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
 
         if not isinstance(isTrue, BoolInstance):
             try:
-                isTrue = isTrue.internal_find_method("isTrue").call(self, [])
+                isTrue = isTrue.internal_find_method("toBool").call(self, [])
             except KeyError:
                 raise InterpreterError(
                     statement.keyword,
-                    f"class {isTrue.class_name} does not implement the isTrue method.",
+                    f"class {isTrue.class_name} does not implement the toBool method.",
                 )
 
         if isTrue.value:

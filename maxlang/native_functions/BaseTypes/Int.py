@@ -1,4 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalInstance,
+    BaseInternalMethod,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -11,7 +17,8 @@ class IntInit(BaseInternalMethod):
         return [
             Parameter(
                 [self.instance.klass.name],
-                make_internal_token("value")
+                make_internal_token("value"),
+                methods_called=[make_internal_token("toInt")],
             )
         ]
 
@@ -24,12 +31,13 @@ class IntAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Float import FloatClass
+
+        return [IntClass.name, FloatClass.name]
 
     def call(self, interpreter, arguments):
         from .Float import FloatInstance, FloatClass
@@ -53,12 +61,13 @@ class IntSubstract(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Float import FloatClass
+
+        return [IntClass.name, FloatClass.name]
 
     def call(self, interpreter, arguments):
         from .Float import FloatInstance, FloatClass
@@ -82,12 +91,13 @@ class IntMultiply(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Float import FloatClass
+
+        return [IntClass.name, FloatClass.name]
 
     def call(self, interpreter, arguments):
         from .Float import FloatInstance, FloatClass
@@ -111,17 +121,18 @@ class IntDivide(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Float import FloatClass
+
+        return [IntClass.name, FloatClass.name]
 
     @property
     def return_token(self):
         from .Float import FloatClass
-        
+
         return FloatClass.name
 
     def call(self, interpreter, arguments):
@@ -145,23 +156,19 @@ class IntEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
+        from .Float import FloatClass
 
-        if is_instance(interpreter, arguments[0], IntClass.name):
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
             return BoolInstance(interpreter).set_value(
                 self.instance.value == arguments[0].value
             )
@@ -176,23 +183,25 @@ class IntGreaterThan(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Float import FloatClass
+
+        return [IntClass.name, FloatClass.name]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
+        from .Float import FloatClass
 
-        if is_instance(interpreter, arguments[0], IntClass.name):
+        if is_instance(interpreter, arguments[0], IntClass.name, FloatClass.name):
             return BoolInstance(interpreter).set_value(
                 self.instance.value > arguments[0].value
             )
@@ -224,13 +233,13 @@ class IntIterate(BaseInternalMethod):
         return IntIteratorInstance(interpreter).set_value(self.instance)
 
 
-class IntIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class IntToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -245,7 +254,7 @@ class IntToString(BaseInternalMethod):
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -260,7 +269,7 @@ class IntToFloat(BaseInternalMethod):
     @property
     def return_token(self):
         from .Float import FloatClass
-        
+
         return FloatClass.name
 
     def call(self, interpreter, arguments):
@@ -281,7 +290,7 @@ class IntClass(BaseInternalClass):
         IntGreaterThan,
         IntNegate,
         IntIterate,
-        IntIsTrue,
+        IntToBool,
         IntToString,
         IntToFloat,
     )
@@ -305,6 +314,14 @@ class IntInstance(BaseInternalInstance):
             self.value = value
         elif is_instance(self.interpreter, value, IntClass.name):
             self.value = value.value
+        elif hasattr(value, "internal_find_method"):
+            to_int_method = value.internal_find_method("toInt")
+            bool_value = to_int_method.call(self.interpreter, [])
+            if not is_instance(self.interpreter, bool_value, IntClass.name):
+                raise InternalError(
+                    f"toFloat method did not return a Float for {value.class_name}."
+                )
+            self.value = bool_value.value
         else:
             raise InternalError(f"Invalid value passed to {self.class_name}.")
 

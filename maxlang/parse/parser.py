@@ -388,9 +388,7 @@ class ExpressionsParser(ParserControl):
                     )
 
                 parameters.append(Parameter(name, default, is_varargs=is_varargs))
-                if not self.match(TokenType.COMMA) or self.check_next(
-                    TokenType.LEFT_BRACE
-                ):
+                if not self.match(TokenType.COMMA):
                     break
 
         self.consume(TokenType.LEFT_BRACE, f"Expect '{{' before {kind} body.")

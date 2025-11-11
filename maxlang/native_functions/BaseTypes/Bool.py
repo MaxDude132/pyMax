@@ -1,5 +1,11 @@
 from __future__ import annotations
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalInstance,
+    BaseInternalMethod,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -12,7 +18,8 @@ class BoolInit(BaseInternalMethod):
         return [
             Parameter(
                 [self.instance.klass.name],
-                make_internal_token("value")
+                make_internal_token("value"),
+                methods_called=[make_internal_token("toBool")],
             )
         ]
 
@@ -25,12 +32,11 @@ class BoolEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [BoolClass.name]
 
     def call(self, interpreter, arguments):
         if is_instance(interpreter, arguments[0], BoolClass.name):
@@ -43,8 +49,8 @@ class BoolEquals(BaseInternalMethod):
         )
 
 
-class BoolIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class BoolToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     def call(self, interpreter, arguments):
         return BoolInstance(interpreter).set_value(self.instance.value)
@@ -56,7 +62,7 @@ class BoolToString(BaseInternalMethod):
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -72,7 +78,7 @@ class BoolClass(BaseInternalClass):
     FIELDS = (
         BoolInit,
         BoolEquals,
-        BoolIsTrue,
+        BoolToBool,
         BoolToString,
     )
 
@@ -93,9 +99,17 @@ class BoolInstance(BaseInternalInstance):
             self.value = value
         elif is_instance(self.interpreter, value, BoolClass.name):
             self.value = value.value
+        elif hasattr(value, "internal_find_method"):
+            to_bool_method = value.internal_find_method("toBool")
+            bool_value = to_bool_method.call(self.interpreter, [])
+            if not is_instance(self.interpreter, bool_value, BoolClass.name):
+                raise InternalError(
+                    f"toBool method did not return a Bool for {value.class_name}."
+                )
+            self.value = bool_value.value
         else:
             raise InternalError(f"Invalid value passed to {self.class_name}.")
-        
+
         return self
 
     def __str__(self):

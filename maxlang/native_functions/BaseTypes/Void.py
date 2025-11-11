@@ -1,4 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalMethod,
+    BaseInternalInstance,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 
 
@@ -22,8 +28,8 @@ class VoidEquals(BaseInternalMethod):
         )
 
 
-class VoidIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class VoidToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     def call(self, interpreter, arguments):
         from .Bool import BoolInstance
@@ -42,7 +48,7 @@ class VoidToString(BaseInternalMethod):
             for v in self.instance.values
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({', '.join(stringified)})"
         )
 
 
@@ -50,7 +56,7 @@ class VoidClass(BaseInternalClass):
     name = make_internal_token("Void")
     FIELDS = (
         VoidEquals,
-        VoidIsTrue,
+        VoidToBool,
         VoidToString,
     )
 

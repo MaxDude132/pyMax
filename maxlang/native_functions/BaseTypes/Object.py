@@ -1,4 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalMethod,
+    BaseInternalInstance,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -8,17 +14,12 @@ class ObjectEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -32,13 +33,13 @@ class ObjectEquals(BaseInternalMethod):
         )
 
 
-class ObjectIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class ObjectToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -53,7 +54,7 @@ class ObjectToString(BaseInternalMethod):
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -64,7 +65,7 @@ class ObjectToString(BaseInternalMethod):
             for v in self.instance.values
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({', '.join(stringified)})"
         )
 
 
@@ -72,7 +73,7 @@ class ObjectClass(BaseInternalClass):
     name = make_internal_token("Object")
     FIELDS = (
         ObjectEquals,
-        ObjectIsTrue,
+        ObjectToBool,
         ObjectToString,
     )
 

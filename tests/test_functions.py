@@ -5,7 +5,7 @@ def test_simple_function():
     assert (
         run_source(
             """
-test: String arg_1 {
+test: arg_1 {
     print(arg_1)
 }
 test("test")
@@ -19,7 +19,7 @@ def test_simple_function_arg_passed_by_name():
     assert (
         run_source(
             """
-test: String arg_1, Int arg_2 {
+test: arg_1, arg_2 {
     print(arg_1, arg_2)
 }
 test(arg_2: 3, arg_1: "test")
@@ -30,21 +30,18 @@ test(arg_2: 3, arg_1: "test")
 
 
 def test_inexistant_function():
-    assert (
-        run_source(
-            """
+    assert run_source(
+        """
 test("test")
 """
-        )
-        == formatted_error("Error at 'test': Undefined variable 'test'.", 2)
-    )
+    ) == formatted_error("Error at 'test': Undefined variable 'test'.", 2)
 
 
 def test_recursive_function():
     assert (
         run_source(
             """
-test: String arg_1, Int passes {
+test: arg_1, passes {
     if passes < 3 {
         print(arg_1)
         test(arg_1, passes + 1)
@@ -61,7 +58,7 @@ def test_recursive_function_with_return_type():
     assert (
         run_source(
             """
-test: String arg_1, Int passes {
+test: arg_1, passes {
     if passes != 0 {
         arg = arg_1 + passes.toString()
         return test(arg, passes - 1)
@@ -78,30 +75,30 @@ print(test_ret)
 
 
 def test_missing_arguments():
-    assert (
-        run_source(
-            """
-test: String arg_1 {
+    assert run_source(
+        """
+test: arg_1 {
     print(arg_1)
 }
 test()
 """
-        )
-        == formatted_error("Error at 'test': Expected between 1 and 1 arguments in call to test but got 0.", 5)
+    ) == formatted_error(
+        "Error at 'test': Expected between 1 and 1 arguments in call to test but got 0.",
+        5,
     )
 
 
 def test_wrong_number_of_arguments():
-    assert (
-        run_source(
-            """
-test: String arg_1, String arg_2 {
+    assert run_source(
+        """
+test: arg_1, arg_2 {
     print(arg_1, arg_2)
 }
 test("test")
 """
-        )
-        == formatted_error("Error at 'test': Expected between 2 and 2 arguments in call to test but got 1.", 5)
+    ) == formatted_error(
+        "Error at 'test': Expected between 2 and 2 arguments in call to test but got 1.",
+        5,
     )
 
 
@@ -109,7 +106,7 @@ def test_arguments_with_default():
     assert (
         run_source(
             """
-test: String arg_1 = "test" {
+test: arg_1 = "test" {
     print(arg_1)
 }
 test()
@@ -118,26 +115,22 @@ test()
         == "test"
     )
 
-    assert (
-        run_source(
-            """
-test: String arg_1 = "test", String arg_2 {
+    assert run_source(
+        """
+test: arg_1 = "test", arg_2 {
     print(arg_1)
 }
 """
-        )
-        == formatted_error(
-            "Error at 'arg_2': Cannot set a parameter without a default value after a parameter with a default value.",
-            2,
-        )
+    ) == formatted_error(
+        "Error at 'arg_2': Cannot set a parameter without a default value after a parameter with a default value.",
+        2,
     )
 
 
 def test_function_with_multiple_return_types_hidden_in_if_statement():
-    assert (
-        run_source(
-            """
-test: String arg_1 {
+    assert run_source(
+        """
+test: arg_1 {
     if arg_1 == "test" {
         return arg_1
     } else {
@@ -148,19 +141,16 @@ test: String arg_1 {
 t = test("test")
 print(t)
 """
-        )
-        == formatted_error(
-            "Error at 'test': Multiple return types found for function.",
-            2,
-        )
+    ) == formatted_error(
+        "Error at 'test': Multiple return types found for function.",
+        2,
     )
 
 
 def test_function_with_return_in_if_statement():
-    assert (
-        run_source(
-            """
-test: String arg_1 {
+    assert run_source(
+        """
+test: arg_1 {
     if arg_1 == "test" {
         fake = 2
         2
@@ -175,9 +165,7 @@ t = 2
 t = test("test")
 print(t)
 """
-        )
-        == formatted_error(
-            "Error at 't': Cannot redefine variable of type Int to type String.",
-            14,
-        )
+    ) == formatted_error(
+        "Error at 't': Cannot redefine variable of type Int to type String.",
+        14,
     )

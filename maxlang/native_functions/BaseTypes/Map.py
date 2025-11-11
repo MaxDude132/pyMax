@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalMethod,
+    BaseInternalInstance,
+    is_instance,
+    make_internal_token,
+)
 from .Pair import PairInstance, PairClass
 from .VarArgs import VarArgsInstance
 from maxlang.errors import InternalError
@@ -13,12 +19,12 @@ class MapInit(BaseInternalMethod):
     @property
     def parameters(self):
         return [
-            Parameter(
-                [PairClass.name],
-                make_internal_token("items"),
-                is_varargs=True
-            )
+            Parameter([PairClass.name], make_internal_token("items"), is_varargs=True)
         ]
+
+    @property
+    def allowed_types(self):
+        return [PairClass.name]
 
     def call(self, interpreter, arguments):
         self.instance.set_values(*arguments)
@@ -29,12 +35,11 @@ class MapPush(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [PairClass.name],
-                make_internal_token("item")
-            )
-        ]
+        return [Parameter([PairClass.name], make_internal_token("item"))]
+
+    @property
+    def allowed_types(self):
+        return [PairClass.name]
 
     def call(self, interpreter, arguments):
         try:
@@ -46,7 +51,6 @@ class MapPush(BaseInternalMethod):
             raise InternalError(f"Invalid value passed to {self.class_name}.")
 
 
-
 class MapGet(BaseInternalMethod):
     name = make_internal_token("get")
 
@@ -54,12 +58,7 @@ class MapGet(BaseInternalMethod):
     def parameters(self):
         from .Object import ObjectClass
 
-        return [
-            Parameter(
-                [ObjectClass.name],
-                make_internal_token("key")
-            )
-        ]
+        return [Parameter([ObjectClass.name], make_internal_token("key"))]
 
     @property
     def return_token(self):
@@ -99,12 +98,7 @@ class MapRemove(BaseInternalMethod):
     def parameters(self):
         from .Object import ObjectClass
 
-        return [
-            Parameter(
-                [ObjectClass.name],
-                make_internal_token("key")
-            )
-        ]
+        return [Parameter([ObjectClass.name], make_internal_token("key"))]
 
     @property
     def return_token(self):
@@ -123,22 +117,22 @@ class MapRemove(BaseInternalMethod):
             )
 
 
-
 class MapAdd(BaseInternalMethod):
     name = make_internal_token("add")
     instance: MapInstance
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("key")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("key"))]
+
+    @property
+    def allowed_types(self):
+        return [MapClass.name, PairClass.name]
 
     def call(self, interpreter, arguments):
-        new_map = MapInstance(interpreter).set_values(VarArgsInstance(interpreter).set_values(*self.instance.get_pairs()))
+        new_map = MapInstance(interpreter).set_values(
+            VarArgsInstance(interpreter).set_values(*self.instance.get_pairs())
+        )
         if is_instance(interpreter, arguments[0], MapClass.name):
             new_map.update(arguments[0])
         elif is_instance(interpreter, arguments[0], PairClass.name):
@@ -154,17 +148,16 @@ class MapEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [MapClass.name]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -178,13 +171,13 @@ class MapEquals(BaseInternalMethod):
         )
 
 
-class MapIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class MapToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -199,7 +192,7 @@ class MapToString(BaseInternalMethod):
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -212,7 +205,7 @@ class MapToString(BaseInternalMethod):
             for k, v in self.instance.values.items()
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({', '.join(stringified)})"
         )
 
 
@@ -226,7 +219,7 @@ class MapClass(BaseInternalClass):
         MapIterate,
         MapAdd,
         MapEquals,
-        MapIsTrue,
+        MapToBool,
         MapToString,
     )
 
@@ -254,7 +247,9 @@ class MapInstance(BaseInternalInstance):
         return self
 
     def __str__(self) -> str:
-        return self.internal_find_method("toString").call(self.klass.interpreter, []).value
+        return (
+            self.internal_find_method("toString").call(self.klass.interpreter, []).value
+        )
 
     def __iter__(self):
         return iter(self.get_pairs())

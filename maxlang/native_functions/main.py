@@ -32,7 +32,9 @@ class BaseInternalFunction(InternalCallable):
 
     @property
     def declaration(self):
-        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, [])
+        return Lambda(
+            Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, []
+        )
 
     @property
     def return_token(self) -> Token:
@@ -43,14 +45,28 @@ class BaseInternalFunction(InternalCallable):
 
 class BaseInternalMethod(InternalCallable):
     name: Token
-    
+
     @property
     def parameters(self) -> list[Parameter]:
         return []
 
     @property
+    def allowed_types(self) -> list[Token]:
+        return []
+
+    @property
     def declaration(self):
-        return Lambda(Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, [])
+        return Lambda(
+            Token(TokenType.IDENTIFIER, self.name, None, -1), self.parameters, []
+        )
+
+    def lower_arity(self):
+        return len(
+            [parameter for parameter in self.parameters if not parameter.is_varargs]
+        )
+
+    def upper_arity(self):
+        return len(self.parameters)
 
     def get_class(self):
         return self.instance.klass
@@ -94,7 +110,7 @@ class BaseInternalAttribute(InternalCallable):
 
     @property
     def return_token(self) -> Token:
-        #raise ValueError("Internal Attribute must set a return class.")
+        # raise ValueError("Internal Attribute must set a return class.")
         from .BaseTypes.Void import VoidClass
 
         return VoidClass.name
@@ -114,13 +130,13 @@ class SharedIsNotTrue(BaseInternalMethod):
         from .BaseTypes.Bool import BoolInstance
 
         try:
-            bool_value = self.instance.internal_find_method("isTrue").call(
+            bool_value = self.instance.internal_find_method("toBool").call(
                 interpreter, []
             )
             return BoolInstance(interpreter).set_value(not bool_value.value)
         except KeyError:
             raise InternalError(
-                f"class {self.class_name} does not implement the isTrue method."
+                f"class {self.class_name} does not implement the toBool method."
             )
 
 
@@ -192,26 +208,38 @@ class BaseInternalClass(ClassCallable):
 
     def check_arity(self, arg_count):
         return arg_count >= self.lower_arity() and arg_count <= self.upper_arity()
-    
+
     def get_new_instance(self) -> BaseInternalInstance:
         return self.instance_class(self.interpreter)
 
     def lower_arity(self):
         try:
-            return self.internal_find_method("init").bind(self.get_new_instance()).lower_arity()
+            return (
+                self.internal_find_method("init")
+                .bind(self.get_new_instance())
+                .lower_arity()
+            )
         except InternalError:
             return 0
 
     def upper_arity(self):
         try:
-            return self.internal_find_method("init").bind(self.get_new_instance()).upper_arity()
+            return (
+                self.internal_find_method("init")
+                .bind(self.get_new_instance())
+                .upper_arity()
+            )
         except InternalError:
             return 0
 
     @property
     def parameters(self):
         try:
-            return self.internal_find_method("init").bind(self.get_new_instance()).parameters
+            return (
+                self.internal_find_method("init")
+                .bind(self.get_new_instance())
+                .parameters
+            )
         except InternalError:
             return []
 
@@ -241,13 +269,15 @@ class BaseInternalInstance(InstanceCallable):
         return self.klass
 
 
-def is_instance(interpreter: Interpreter, instance: InstanceCallable, *class_names: Token) -> bool:
+def is_instance(
+    interpreter: Interpreter, instance: InstanceCallable, *class_names: Token
+) -> bool:
     for class_name in class_names:
         klass = interpreter.environment.get(class_name)
-        val = instance.internal_find_method("isInstance").call(
-            interpreter, [klass]
-        ).value
+        val = (
+            instance.internal_find_method("isInstance").call(interpreter, [klass]).value
+        )
         if val:
             return True
-        
+
     return False

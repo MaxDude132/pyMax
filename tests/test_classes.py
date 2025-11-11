@@ -19,7 +19,7 @@ def test_class_init():
         run_source(
             """
 class Test {
-    init: String arg {
+    init: arg {
         self.arg = arg
     }
 }
@@ -32,16 +32,13 @@ print(test.arg)
 
 
 def test_get_attribute_on_class():
-    assert (
-        run_source(
-            """
+    assert run_source(
+        """
 class Test {
-    init: String arg {
+    init: arg {
         self.arg = arg
     }
 }
 print(Test.arg)
 """
-        )
-        == formatted_error("Only instances have properties.", 7)
-    )
+    ) == formatted_error("Only instances have properties.", 7)

@@ -1,4 +1,10 @@
-from ..main import BaseInternalClass, BaseInternalMethod, BaseInternalInstance, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalMethod,
+    BaseInternalInstance,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -11,11 +17,7 @@ class ListInit(BaseInternalMethod):
         from .Object import ObjectClass
 
         return [
-            Parameter(
-                [ObjectClass.name],
-                make_internal_token("items"),
-                is_varargs=True
-            )
+            Parameter([ObjectClass.name], make_internal_token("items"), is_varargs=True)
         ]
 
     def call(self, interpreter, arguments):
@@ -29,12 +31,7 @@ class ListPush(BaseInternalMethod):
     def parameters(self):
         from .Object import ObjectClass
 
-        return [
-            Parameter(
-                [ObjectClass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([ObjectClass.name], make_internal_token("other"))]
 
     def call(self, interpreter, arguments):
         self.instance.values.append(arguments[0])
@@ -53,9 +50,7 @@ class ListPop(BaseInternalMethod):
         try:
             return self.instance.values.pop()
         except IndexError:
-            raise InternalError(
-                f"No more items in {self.instance.class_name}."
-            )
+            raise InternalError(f"No more items in {self.instance.class_name}.")
 
 
 class ListGet(BaseInternalMethod):
@@ -65,12 +60,13 @@ class ListGet(BaseInternalMethod):
     def parameters(self):
         from .Int import IntClass
 
-        return [
-            Parameter(
-                [IntClass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([IntClass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Int import IntClass
+
+        return [IntClass.name]
 
     @property
     def return_token(self):
@@ -82,9 +78,7 @@ class ListGet(BaseInternalMethod):
         try:
             return self.instance.values[int(arguments[0].value)]
         except (ValueError, IndexError, TypeError, AttributeError):
-            raise InternalError(
-                f"{arguments[0]} is not a valid index."
-            )
+            raise InternalError(f"{arguments[0]} is not a valid index.")
 
 
 class ListExtend(BaseInternalMethod):
@@ -92,12 +86,11 @@ class ListExtend(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [ListClass.name]
 
     def call(self, interpreter, arguments):
         if not is_instance(interpreter, arguments[0], ListClass.name):
@@ -131,12 +124,11 @@ class ListAdd(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [ListClass.name]
 
     def call(self, interpreter, arguments):
         if is_instance(interpreter, arguments[0], ListClass.name):
@@ -156,12 +148,13 @@ class ListMultiply(BaseInternalMethod):
     def parameters(self):
         from .Int import IntClass
 
-        return [
-            Parameter(
-                [IntClass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([IntClass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        from .Int import IntClass
+
+        return [IntClass.name]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -181,17 +174,16 @@ class ListEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [ListClass.name]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -205,13 +197,13 @@ class ListEquals(BaseInternalMethod):
         )
 
 
-class ListIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class ListToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -226,7 +218,7 @@ class ListToString(BaseInternalMethod):
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -237,7 +229,7 @@ class ListToString(BaseInternalMethod):
             for v in self.instance.values
         )
         return StringInstance(interpreter).set_value(
-            f"{self.instance.klass.name.lexeme}({", ".join(stringified)})"
+            f"{self.instance.klass.name.lexeme}({', '.join(stringified)})"
         )
 
 
@@ -253,7 +245,7 @@ class ListClass(BaseInternalClass):
         ListAdd,
         ListMultiply,
         ListEquals,
-        ListIsTrue,
+        ListToBool,
         ListToString,
     )
 

@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from ..main import BaseInternalClass, BaseInternalInstance, BaseInternalMethod, is_instance, make_internal_token
+from ..main import (
+    BaseInternalClass,
+    BaseInternalInstance,
+    BaseInternalMethod,
+    is_instance,
+    make_internal_token,
+)
 from maxlang.errors import InternalError
 from maxlang.parse.expressions import Parameter
 
@@ -18,7 +24,8 @@ class StringInit(BaseInternalMethod):
         return [
             Parameter(
                 [self.instance.klass.name],
-                make_internal_token("value")
+                make_internal_token("value"),
+                methods_called=[make_internal_token("toString")],
             )
         ]
 
@@ -34,21 +41,21 @@ class StringAdd(BaseInternalMethod):
         return [
             Parameter(
                 [self.instance.klass.name],
-                make_internal_token("value")
+                make_internal_token("value"),
+                methods_called=[make_internal_token("toString")],
             )
         ]
 
     def call(self, interpreter, arguments):
-        from .Int import IntInstance
-        from .Float import FloatInstance
-
-        if isinstance(arguments[0], (IntInstance, FloatInstance, StringInstance)):
-            return StringInstance(interpreter).set_value(
-                self.instance.value + str(arguments[0].value)
+        to_string_method = arguments[0].internal_find_method("toString")
+        string_value = to_string_method.call(interpreter, [])
+        if not is_instance(interpreter, string_value, StringClass.name):
+            raise InternalError(
+                f"toString method did not return a String for {arguments[0].class_name}."
             )
 
-        raise InternalError(
-            f"Cannot add {self.instance.class_name} and {arguments[0].class_name}"
+        return StringInstance(interpreter).set_value(
+            self.instance.value + string_value.value
         )
 
 
@@ -59,12 +66,13 @@ class StringMultiply(BaseInternalMethod):
     def parameters(self):
         from .Int import IntClass
 
-        return [
-            Parameter(
-                [IntClass.name],
-                make_internal_token("value")
-            )
-        ]
+        return [Parameter([IntClass.name], make_internal_token("value"))]
+
+    @property
+    def allowed_types(self):
+        from .Int import IntClass
+
+        return [IntClass.name]
 
     def call(self, interpreter, arguments):
         from .Int import IntClass
@@ -84,17 +92,16 @@ class StringEquals(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [
-            Parameter(
-                [self.instance.klass.name],
-                make_internal_token("other")
-            )
-        ]
+        return [Parameter([self.instance.klass.name], make_internal_token("other"))]
+
+    @property
+    def allowed_types(self):
+        return [StringClass.name]
 
     @property
     def return_token(self):
         from .Bool import BoolClass
-        
+
         return BoolClass.name
 
     def call(self, interpreter, arguments):
@@ -121,17 +128,17 @@ class StringIterate(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         from ..Interators.StringIterator import StringIteratorInstance
-        
+
         return StringIteratorInstance(interpreter).set_value(self.instance)
 
 
-class StringIsTrue(BaseInternalMethod):
-    name = make_internal_token("isTrue")
+class StringToBool(BaseInternalMethod):
+    name = make_internal_token("toBool")
 
     @property
     def return_token(self):
         from .String import StringClass
-        
+
         return StringClass.name
 
     def call(self, interpreter, arguments):
@@ -153,7 +160,7 @@ class StringToInt(BaseInternalMethod):
     @property
     def return_token(self):
         from .Int import IntClass
-        
+
         return IntClass.name
 
     def call(self, interpreter, arguments):
@@ -180,7 +187,7 @@ class StringToFloat(BaseInternalMethod):
     @property
     def return_token(self):
         from .Float import FloatClass
-        
+
         return FloatClass.name
 
     def call(self, interpreter, arguments):
@@ -201,7 +208,7 @@ class StringClass(BaseInternalClass):
         StringAdd,
         StringMultiply,
         StringEquals,
-        StringIsTrue,
+        StringToBool,
         StringIterate,
         StringToString,
         StringToInt,

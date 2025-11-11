@@ -13,11 +13,11 @@ class Token:
 
     def __hash__(self) -> str:
         return hash(self.lexeme)
-    
+
     def __eq__(self, other: Token) -> bool:
         if not isinstance(other, Token):
             return False
-        
+
         return self.lexeme == other.lexeme and self.type_ == other.type_
 
 
@@ -80,10 +80,6 @@ class Lexer:
                 self.add_token(TokenType.LEFT_BRACKET)
             case "]":
                 self.add_token(TokenType.RIGHT_BRACKET)
-            case "<":
-                self.add_token(TokenType.LEFT_CHEVRON)
-            case ">":
-                self.add_token(TokenType.RIGHT_CHEVRON)
             case ",":
                 self.add_token(TokenType.COMMA)
             case ".":
@@ -186,13 +182,13 @@ class Lexer:
         self.add_token(TokenType.STRING, value)
 
     def string_interpolation(self, delimiter: str):
-        if not (self.peek() == '$' and self.peek_next() == '{'):
+        if not (self.peek() == "$" and self.peek_next() == "{"):
             return
-        
-        if self.previous() == '\\':
-            self.source = self.source[:self.current-1] + self.source[self.current:]
+
+        if self.previous() == "\\":
+            self.source = self.source[: self.current - 1] + self.source[self.current :]
             return
-        
+
         value = self.source[self.start + 1 : self.current]
         self.add_token(TokenType.STRING, value)
         self.start = self.current
@@ -205,7 +201,9 @@ class Lexer:
             self.scan_token()
 
             if self.is_at_end():
-                self.errors.append(Error(self.line, "Unterminated string interpolation."))
+                self.errors.append(
+                    Error(self.line, "Unterminated string interpolation.")
+                )
                 break
 
         self.start = self.current
