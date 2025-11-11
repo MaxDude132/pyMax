@@ -197,6 +197,20 @@ class StringToFloat(BaseInternalMethod):
             )
 
 
+class StringToUpper(BaseInternalMethod):
+    name = make_internal_token("toUpper")
+
+    def call(self, interpreter, arguments):
+        return StringInstance(interpreter).set_value(self.instance.value.upper())
+
+
+class StringToLower(BaseInternalMethod):
+    name = make_internal_token("toLower")
+
+    def call(self, interpreter, arguments):
+        return StringInstance(interpreter).set_value(self.instance.value.lower())
+
+
 class StringClass(BaseInternalClass):
     name = make_internal_token("String")
     FIELDS = (
@@ -204,8 +218,10 @@ class StringClass(BaseInternalClass):
         StringAdd,
         StringMultiply,
         StringEquals,
-        StringToBool,
         StringIterate,
+        StringToUpper,
+        StringToLower,
+        StringToBool,
         StringToString,
         StringToInt,
         StringToFloat,

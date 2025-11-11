@@ -5,7 +5,7 @@ def test_type_check_user_defined_function():
     assert (
         run_source(
             """
-test: String param1, Int param2 {
+test: param1, param2 {
     print(param1, param2)
 }
 
@@ -19,21 +19,24 @@ def test_type_check_user_defined_function_wrong_type():
     assert (
         run_source(
             """
-test: String param1, Int param2 {
+test: param1, param2 {
     print(param1, param2)
 }
 
 test("test", param2: "test2")
             """
         )
-    ) == formatted_error("Error at '\"test2\"': Expected Int but got String for parameter param2 in call to test.", 6)
+    ) == formatted_error(
+        "Error at '\"test2\"': Expected Int but got String for parameter param2 in call to test.",
+        6,
+    )
 
 
 def test_type_check_user_defined_function_with_variable():
     assert (
         run_source(
             """
-test: String param1, Int param2 {
+test: param1, param2 {
     print(param1, param2)
 }
 
@@ -48,7 +51,7 @@ def test_type_check_user_defined_function_with_variable_wrong_type():
     assert (
         run_source(
             """
-test: String param1, Int param2 {
+test: param1, param2 {
     print(param1, param2)
 }
 
@@ -56,7 +59,10 @@ test_param_1 = 2
 test(test_param_1, param2: 2)
             """
         )
-    ) == formatted_error("Error at 'test_param_1': Expected String but got Int for parameter param1 in call to test.", 7)
+    ) == formatted_error(
+        "Error at 'test_param_1': Expected String but got Int for parameter param1 in call to test.",
+        7,
+    )
 
 
 def test_type_check_user_defined_function_with_user_defined_type():
@@ -64,12 +70,12 @@ def test_type_check_user_defined_function_with_user_defined_type():
         run_source(
             """
 class Tester {
-    init: String test {
+    init: test {
         self.test = test
     }
 }
 
-test: Tester param1, Tester param2 {
+test: param1, param2 {
     print(param1.test, param2.test)
 }
 
@@ -87,12 +93,12 @@ def test_type_check_user_defined_function_with_user_defined_type_wrong_type():
         run_source(
             """
 class Tester {
-    init: String test {
+    init: test {
         self.test = test
     }
 }
 
-test: Tester param1, Tester param2 {
+test: param1, param2 {
     print(param1.test, param2.test)
 }
 
@@ -102,7 +108,10 @@ other_tester = "test2"
 test(tester, param2: other_tester)
             """
         )
-    ) == formatted_error("Error at 'other_tester': Expected Tester but got String for parameter param2 in call to test.", 15)
+    ) == formatted_error(
+        "Error at 'other_tester': Object of type String does not have required attribute 'test'.",
+        15,
+    )
 
 
 def test_type_check_works_with_superclasses():
@@ -110,18 +119,18 @@ def test_type_check_works_with_superclasses():
         run_source(
             """
 class Tester {
-    init: String test {
+    init: test {
         self.test = test
     }
 }
 
 class CustomTester: Tester {
-    init: String test {
+    init: test {
         self.test = test
     }
 }
 
-test: Tester param1, Tester param2 {
+test: param1, param2 {
     print(param1.test, param2.test)
 }
 
@@ -155,7 +164,9 @@ test = "test"  -- This should fail
 print(test)
             """
         )
-    ) == formatted_error("Error at 'test': Cannot redefine variable of type Int to type String.", 3)
+    ) == formatted_error(
+        "Error at 'test': Cannot redefine variable of type Int to type String.", 3
+    )
 
 
 def test_type_check_can_redefine_variables_that_share_superclass():
@@ -187,7 +198,9 @@ test = Class2()
 print(test)
             """
         )
-    ) == formatted_error("Error at 'test': Cannot redefine variable of type Class1 to type Class2.", 7)
+    ) == formatted_error(
+        "Error at 'test': Cannot redefine variable of type Class1 to type Class2.", 7
+    )
 
 
 def test_type_check_redefining_to_superclass_is_taken_into_account():
@@ -199,7 +212,7 @@ class Class1: Shared {}
 class Class2: Shared {}
 
 class Tester {
-    init: Class2 test {
+    init: test {
         self.test = test
     }
 }
@@ -211,14 +224,17 @@ new_test = Tester(test)
 print(new_test)
             """
         )
-    ) == formatted_error("Error at 'test': Expected Class2 but got Shared for parameter test in call to Tester.", 15)
+    ) == formatted_error(
+        "Error at 'test': Expected Class2 but got Shared for parameter test in call to Tester.",
+        15,
+    )
 
 
 def test_type_check_handles_return():
     assert (
         run_source(
             """
-test: String value {
+test: value {
     return value
 }
 
@@ -226,7 +242,9 @@ str = test("strtest")
 str = 2
             """
         )
-    ) == formatted_error("Error at 'str': Cannot redefine variable of type String to type Int.", 7)
+    ) == formatted_error(
+        "Error at 'str': Cannot redefine variable of type String to type Int.", 7
+    )
 
 
 def test_type_check_cannot_change_attribute_type():
@@ -234,7 +252,7 @@ def test_type_check_cannot_change_attribute_type():
         run_source(
             """
 class Tester {
-    init: String test {
+    init: test {
         self.test = test
         self.test = 2
     }
@@ -243,4 +261,6 @@ class Tester {
 test = Tester("strtest")
             """
         )
-    ) == formatted_error("Error at 'test': Cannot redefine attribute of type String to type Int.", 5)
+    ) == formatted_error(
+        "Error at 'test': Cannot redefine attribute of type String to type Int.", 5
+    )

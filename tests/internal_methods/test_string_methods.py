@@ -69,3 +69,13 @@ print('Value: '.add(WithoutToString()))
         "Error at 'WithoutToString': Object of type WithoutToString does not have required method 'toString'.",
         3,
     )
+
+
+def test_to_upper():
+    assert run_source("print('test'.toUpper())") == "TEST"
+    assert run_source("print('TeSt123!'.toUpper())") == "TEST123!"
+
+
+def test_to_lower():
+    assert run_source("print('TEST'.toLower())") == "test"
+    assert run_source("print('TeSt123!'.toLower())") == "test123!"
