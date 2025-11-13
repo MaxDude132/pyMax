@@ -147,6 +147,46 @@ print(t)
     )
 
 
+def test_function_with_multiple_return_types_based_on_argument_call():
+    assert run_source(
+        """
+test: arg_1 {
+    if arg_1 == 3 {
+        return arg_1.toString()
+    } else {
+        return 2
+    }
+}
+
+t = test(3)
+print(t)
+"""
+    ) == formatted_error(
+        "Error at 'test': Multiple return types found for function.",
+        2,
+    )
+
+
+def test_function_with_multiple_return_types_based_on_chained_argument_call():
+    assert run_source(
+        """
+test: arg_1 {
+    if arg_1 == 3 {
+        return arg_1.add(1).toString()
+    } else {
+        return 2
+    }
+}
+
+t = test(3)
+print(t)
+"""
+    ) == formatted_error(
+        "Error at 'test': Multiple return types found for function.",
+        2,
+    )
+
+
 def test_function_with_return_in_if_statement():
     assert run_source(
         """
@@ -166,6 +206,6 @@ t = test("test")
 print(t)
 """
     ) == formatted_error(
-        "Error at 't': Cannot redefine variable of type Int to type String.",
+        "Error at 't': Cannot redefine variable of type <class Int> to type <class String>.",
         14,
     )
