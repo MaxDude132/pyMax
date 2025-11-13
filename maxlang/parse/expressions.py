@@ -69,6 +69,7 @@ class Type:
     superclasses: list[Type] = field(default_factory=list)
     return_type: Type | None = None
     calls_super: bool = False
+    return_paths: list = field(default_factory=list)  # List of ReturnPath objects
 
 
 @dataclass

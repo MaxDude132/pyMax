@@ -155,7 +155,7 @@ class CustomIterator {
 
 class CustomIterable {
     init: varargs values {
-        self.values = CustomContainer(values)
+        self.values = CustomContainer(*values)
     }
 
     iterate {

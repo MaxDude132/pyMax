@@ -33,6 +33,28 @@ class Deferred:
         self.name = name
 
 
+class ReturnPath:
+    """Represents one possible return path in a function.
+    
+    Can be:
+    - A concrete type (e.g., return 2, return "hello")
+    - A parameter (e.g., return arg_1)
+    - A method chain on a parameter (e.g., return arg_1.toString() or return arg_1.add(1).toString())
+    """
+    def __init__(self, parameter_name: str | None = None, method_chain: list[str] = None, concrete_type: Type | None = None):
+        self.parameter_name = parameter_name  # Name of the parameter if this return depends on a parameter
+        self.method_chain = method_chain or []  # List of method names called in sequence
+        self.concrete_type = concrete_type  # If this is a concrete return value
+    
+    def is_parameter_dependent(self) -> bool:
+        """Returns True if this return path depends on a parameter."""
+        return self.parameter_name is not None
+    
+    def is_concrete(self) -> bool:
+        """Returns True if this return path is a concrete value."""
+        return self.concrete_type is not None
+
+
 class TypeChecker(ExpressionVisitor, StatementVisitor):
     def __init__(self, interpreter: Interpreter, parser_error):
         self.interpreter = interpreter
@@ -95,6 +117,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
         self.current_function: Token | None = None
         self.current_function_return_types = []
+        self.current_function_return_paths: list[ReturnPath] = []
         self.current_class: Token | None = None
         self.current_method_calls_super = False
         self.current_function_parameters: list[Parameter] = []
@@ -289,12 +312,18 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         self.current_function = statement.token
         previous_return_types = self.current_function_return_types
         self.current_function_return_types = []
+        previous_return_paths = self.current_function_return_paths
+        self.current_function_return_paths = []
         previous_parameters = self.current_function_parameters
         self.current_function_parameters = statement.params
 
         self.begin_scope()
         self.set_parameters(statement.params)
         self.check_many(statement.body)
+        
+        # Collect return paths for this function
+        return_paths = self.current_function_return_paths.copy()
+        
         try:
             ret_type = self.get_return_type()
             if ret_type is None and self.current_class is not None:
@@ -308,6 +337,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
         self.current_function = previous_function
         self.current_function_return_types = previous_return_types
+        self.current_function_return_paths = previous_return_paths
         self.current_function_parameters = previous_parameters
 
         return Type(
@@ -324,6 +354,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             statement.params,
             return_type=ret_type,
             calls_super=self.current_method_calls_super,
+            return_paths=return_paths,
         )
 
     def set_parameters(self, parameters: list[Parameter]):
@@ -348,6 +379,136 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
     def visit_expression_statement(self, statement):
         return self.check(statement.expression)
+
+    def resolve_return_type_from_paths(self, return_paths: list, parameters: list[Parameter], arguments: list, callee_token) -> Type:
+        """
+        Resolve the actual return type based on return paths and actual arguments.
+        Also detects conflicting return types.
+        """
+        resolved_types = []
+        
+        for path in return_paths:
+            if path.is_concrete():
+                # Concrete return type
+                resolved_types.append(path.concrete_type)
+            elif path.is_parameter_dependent():
+                # Find the argument for this parameter
+                param_index = None
+                for i, param in enumerate(parameters):
+                    if param.name.lexeme == path.parameter_name:
+                        param_index = i
+                        break
+                
+                if param_index is None or param_index >= len(arguments):
+                    continue
+                
+                arg = arguments[param_index]
+                arg_type = self.check(arg.value if isinstance(arg, Argument) else arg)
+                
+                # Apply method chain if any
+                current_type = arg_type
+                for method_name in path.method_chain:
+                    if current_type and hasattr(current_type, 'methods'):
+                        method_type = current_type.methods.get(method_name)
+                        if method_type and hasattr(method_type, 'return_type'):
+                            current_type = method_type.return_type
+                        else:
+                            # Method not found, can't determine type
+                            current_type = None
+                            break
+                
+                if current_type:
+                    resolved_types.append(current_type)
+        
+        # Check if all resolved types are compatible
+        if not resolved_types:
+            return None
+        
+        common_type = resolved_types[0]
+        for type_ in resolved_types[1:]:
+            try:
+                common_type = self.get_common_type(common_type, type_)
+            except TypeError:
+                # Incompatible types - this is an error
+                if callee_token:
+                    # Extract the actual token from Variable if needed
+                    token = callee_token.name if hasattr(callee_token, 'name') else callee_token
+                    self.parser_error(
+                        token,
+                        "Multiple return types found for function."
+                    )
+                raise TypeError("Incompatible return types")
+        
+        return common_type
+
+    def validate_init_with_arguments(self, init_method: Type, arguments: list, callee_token):
+        """
+        Validate that an init method body is compatible with the actual argument types.
+        This checks for issues like assigning a parameter then a different type to attributes.
+        """
+        if not hasattr(init_method.klass, "declaration"):
+            return
+        
+        declaration = init_method.klass.declaration
+        if not hasattr(declaration, "body") or not hasattr(declaration, "params"):
+            return
+        
+        # Build a mapping of parameter names to actual argument types
+        param_type_map = {}
+        for i, param in enumerate(declaration.params):
+            if i < len(arguments):
+                arg = arguments[i]
+                arg_type = self.check(arg.value if isinstance(arg, Argument) else arg)
+                param_type_map[param.name.lexeme] = arg_type
+        
+        # Check Set expressions in the init body for parameter usage
+        self.validate_body_with_param_types(declaration.body, param_type_map)
+    
+    def validate_body_with_param_types(self, statements, param_type_map: dict):
+        """
+        Check statements for Set expressions that might conflict with parameter types.
+        Validates assignments where the attribute was previously set to a parameter type.
+        """
+        from .statements import ExpressionStatement
+        from .expressions import Set, Variable, Literal
+        
+        # Track attribute types as we process assignments
+        attribute_types = {}
+        
+        for statement in statements:
+            # Handle expression statements that contain Set expressions
+            if isinstance(statement, ExpressionStatement):
+                expr = statement.expression
+                if isinstance(expr, Set):
+                    # Determine the value type
+                    value_type = None
+                    if isinstance(expr.value, Variable) and expr.value.name.lexeme in param_type_map:
+                        # Assigning a parameter to an attribute
+                        value_type = param_type_map[expr.value.name.lexeme]
+                    elif isinstance(expr.value, Literal):
+                        # For literals, we can safely get their type without recursion
+                        value_type = self.check(expr.value)
+                    # Skip complex expressions to avoid scope issues
+                    
+                    if value_type is not None:
+                        attr_key = expr.name.lexeme
+                        
+                        # Check if we're redefining an attribute with an incompatible type
+                        if attr_key in attribute_types:
+                            previous_type = attribute_types[attr_key]
+                            try:
+                                # Try to get common type
+                                self.get_common_type(previous_type, value_type)
+                            except TypeError:
+                                # Incompatible types
+                                previous_type_name = self.format_type_name(previous_type)
+                                new_type_name = self.format_type_name(value_type)
+                                self.parser_error(
+                                    expr.name,
+                                    f"Cannot redefine attribute of type {previous_type_name} to type {new_type_name}."
+                                )
+                        else:
+                            attribute_types[attr_key] = value_type
 
     def visit_call(self, expression):
         # Track method calls on parameters
@@ -440,7 +601,28 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                         arg_token,
                     )
 
-        # Resolve parameter-dependent return types
+        # For class constructors, validate init method body with actual argument types
+        if isinstance(callee_type.klass, ClassCallable):
+            init_method = callee_type.methods.get("init")
+            if init_method:
+                if hasattr(init_method.klass, "declaration"):
+                    self.validate_init_with_arguments(
+                        init_method,
+                        expression.arguments,
+                        expression.callee if hasattr(expression.callee, "name") else None
+                    )
+
+        # Resolve parameter-dependent return types using return paths
+        if callee_type.return_paths:
+            return_type = self.resolve_return_type_from_paths(
+                callee_type.return_paths,
+                callee_type.parameters,
+                expression.arguments,
+                expression.callee if hasattr(expression.callee, "name") else None
+            )
+            return return_type
+        
+        # Fallback to original logic for legacy support
         return_type = callee_type.return_type
         if return_type and return_type.klass is object:
             # The return type is a parameter - find which one and use the argument type
@@ -762,9 +944,49 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
     def visit_self(self, expression):
         return self.resolve(expression.keyword)
 
+    def analyze_return_path(self, expression) -> ReturnPath:
+        """Analyze an expression to determine its return path characteristics."""
+        # Direct parameter return: return arg_1
+        if isinstance(expression, Variable):
+            param = self.find_parameter(expression.name.lexeme)
+            if param is not None:
+                return ReturnPath(parameter_name=expression.name.lexeme)
+        
+        # Method call chain on parameter: return arg_1.toString() or arg_1.add(1).toString()
+        if isinstance(expression, Call) and isinstance(expression.callee, Get):
+            # Extract the chain of method calls
+            method_chain = []
+            current = expression
+            
+            while isinstance(current, Call) and isinstance(current.callee, Get):
+                method_chain.insert(0, current.callee.name.lexeme)
+                current = current.callee.obj
+            
+            # Check if the base is a parameter
+            if isinstance(current, Variable):
+                param = self.find_parameter(current.name.lexeme)
+                if param is not None:
+                    return ReturnPath(parameter_name=current.name.lexeme, method_chain=method_chain)
+        
+        # Single method call on parameter: Could also be Get without Call
+        if isinstance(expression, Get):
+            if isinstance(expression.obj, Variable):
+                param = self.find_parameter(expression.obj.name.lexeme)
+                if param is not None:
+                    return ReturnPath(parameter_name=expression.obj.name.lexeme, method_chain=[expression.name.lexeme])
+        
+        # Concrete type return - get the type
+        type_ = self.check(expression)
+        return ReturnPath(concrete_type=type_)
+
     def visit_return_statement(self, statement):
         ret = self.check(statement.value)
         self.current_function_return_types.append(ret)
+        
+        # Also track the return path
+        return_path = self.analyze_return_path(statement.value)
+        self.current_function_return_paths.append(return_path)
+        
         return ret
 
     def visit_if_expression(self, expression):

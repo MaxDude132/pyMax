@@ -143,7 +143,7 @@ print(t)
 """
     ) == formatted_error(
         "Error at 'test': Multiple return types found for function.",
-        2,
+        10,
     )
 
 
@@ -163,7 +163,7 @@ print(t)
 """
     ) == formatted_error(
         "Error at 'test': Multiple return types found for function.",
-        2,
+        10,
     )
 
 
@@ -183,7 +183,7 @@ print(t)
 """
     ) == formatted_error(
         "Error at 'test': Multiple return types found for function.",
-        2,
+        10,
     )
 
 
