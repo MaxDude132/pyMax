@@ -61,6 +61,6 @@ tester = Tester("test", 1)
 print(tester.value)
         """
     ) == formatted_error(
-        "Error at '1': Object of type Int does not have required method 'toUpper'.",
+        "Error at '1': <class Int> does not have required method 'toUpper'.",
         11,
     )

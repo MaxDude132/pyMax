@@ -12,7 +12,7 @@ def test_toInt():
 def test_init():
     assert run_source("print(Float(1.3))") == "1.3"
     assert run_source("print(Float(true))") == formatted_error(
-        "Error at 'true': Object of type Bool does not have required method 'toFloat'.",
+        "Error at 'true': <class Bool> does not have required method 'toFloat'.",
         1,
     )
 

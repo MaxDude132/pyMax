@@ -13,7 +13,7 @@ def test_addition():
     #     1,
     # )
     assert run_source("print(true + true)") == formatted_error(
-        "Error at '+': <Bool> does not implement the add method.", 1
+        "Error at '+': <class Bool> does not implement the add method.", 1
     )
     assert run_source("print('true' + true)") == "truetrue"
     assert run_source("print(List(1) + List(2))") == "List(1, 2)"
@@ -41,19 +41,19 @@ def test_substraction():
         run_source("print(2.3 - 1.2)") == "1.0999999999999999"
     )  # Floating point edge case
     assert run_source("print('test' - 't')") == formatted_error(
-        "Error at '-': <String> does not implement the substract method.", 1
+        "Error at '-': <class String> does not implement the substract method.", 1
     )
     assert run_source("print(true - 't')") == formatted_error(
-        "Error at '-': <Bool> does not implement the substract method.", 1
+        "Error at '-': <class Bool> does not implement the substract method.", 1
     )
     assert run_source("print(List(1, 2) - 1)") == formatted_error(
-        "Error at '-': <List> does not implement the substract method.", 1
+        "Error at '-': <class List> does not implement the substract method.", 1
     )
     assert run_source("print(Map(1 -> 'test') - 1)") == formatted_error(
-        "Error at '-': <Map> does not implement the substract method.", 1
+        "Error at '-': <class Map> does not implement the substract method.", 1
     )
     assert run_source("print((1 -> 'test') - 1)") == formatted_error(
-        "Error at '-': <Pair> does not implement the substract method.", 1
+        "Error at '-': <class Pair> does not implement the substract method.", 1
     )
 
 
@@ -68,14 +68,14 @@ def test_multiplication():
     )
     assert run_source("print('test' * 2)") == "testtest"
     assert run_source("print(true * 't')") == formatted_error(
-        "Error at '*': <Bool> does not implement the multiply method.", 1
+        "Error at '*': <class Bool> does not implement the multiply method.", 1
     )
     assert run_source("print(List(1, 2) * 2)") == "List(1, 2, 1, 2)"
     assert run_source("print(Map(1 -> 'test') * 2)") == formatted_error(
-        "Error at '*': <Map> does not implement the multiply method.", 1
+        "Error at '*': <class Map> does not implement the multiply method.", 1
     )
     assert run_source("print((1 -> 'test') * 2)") == formatted_error(
-        "Error at '*': <Pair> does not implement the multiply method.", 1
+        "Error at '*': <class Pair> does not implement the multiply method.", 1
     )
 
 
@@ -87,17 +87,17 @@ def test_division():
         run_source("print(2.3 / 1.2)") == "1.9166666666666665"
     )  # Floating point edge case
     assert run_source("print('test' / 't')") == formatted_error(
-        "Error at '/': <String> does not implement the divide method.", 1
+        "Error at '/': <class String> does not implement the divide method.", 1
     )
     assert run_source("print(true / 't')") == formatted_error(
-        "Error at '/': <Bool> does not implement the divide method.", 1
+        "Error at '/': <class Bool> does not implement the divide method.", 1
     )
     assert run_source("print(List(1, 2) / 1)") == formatted_error(
-        "Error at '/': <List> does not implement the divide method.", 1
+        "Error at '/': <class List> does not implement the divide method.", 1
     )
     assert run_source("print(Map(1 -> 'test') / 1)") == formatted_error(
-        "Error at '/': <Map> does not implement the divide method.", 1
+        "Error at '/': <class Map> does not implement the divide method.", 1
     )
     assert run_source("print((1 -> 'test') / 1)") == formatted_error(
-        "Error at '/': <Pair> does not implement the divide method.", 1
+        "Error at '/': <class Pair> does not implement the divide method.", 1
     )

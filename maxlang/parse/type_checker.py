@@ -86,6 +86,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 )
             self.variables[-1][name.lexeme].methods = method_types
 
+        # Store VarArgs type for use with varargs parameters
+        self.varargs_type = self.variables[-1].get("VarArgs")
+
         for name in INTERNAL_TYPES:
             # These types are reserved to internal functionalities
             self.variables[-1].pop(name.lexeme)
@@ -107,6 +110,30 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 return param
         return None
 
+    def format_type_name(self, type_: Type) -> str:
+        # Parameter types (used inside function definitions)
+        if type_.klass is object:
+            return f"<parameter {type_.token.lexeme}>"
+
+        # Built-in internal types (Int, String, etc.)
+        if isinstance(type_.klass, type) and issubclass(type_.klass, BaseInternalClass):
+            return f"<instanceof {type_.klass.name.lexeme}>"
+
+        # Internal classes
+        if isinstance(type_.klass, ClassCallable):
+            return f"<class {type_.token.lexeme}>"
+
+        # Internal functions
+        if isinstance(type_.klass, FunctionCallable):
+            return f"<function {type_.token.lexeme}>"
+
+        # User-defined classes and functions
+        if hasattr(type_.klass, "name"):
+            return f"<class {type_.klass.name.lexeme}>"
+
+        # Fallback
+        return str(type_.klass)
+
     def validate_structural_requirements(
         self,
         obj_type: Type,
@@ -120,7 +147,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             ):
                 self.parser_error(
                     call_token,
-                    f"Object of type {obj_type.klass.name.lexeme if hasattr(obj_type.klass, 'name') else str(obj_type.klass)} does not have required attribute '{attr.lexeme}'.",
+                    f"{self.format_type_name(obj_type)} does not have required attribute '{attr.lexeme}'.",
                 )
 
         for method in required_methods:
@@ -129,7 +156,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             ):
                 self.parser_error(
                     call_token,
-                    f"Object of type {obj_type.klass.name.lexeme if hasattr(obj_type.klass, 'name') else str(obj_type.klass)} does not have required method '{method.lexeme}'.",
+                    f"{self.format_type_name(obj_type)} does not have required method '{method.lexeme}'.",
                 )
 
     def launch(self, statements: list[Statement]):
@@ -184,6 +211,17 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
         if isinstance(new_type, Deferred):
             return old_type
+
+        # If both are parameter types, they're compatible
+        if old_type.klass is object and new_type.klass is object:
+            return old_type
+
+        # If one is a parameter and one is concrete, keep the parameter type
+        # This will be resolved at call time
+        if old_type.klass is object:
+            return old_type
+        if new_type.klass is object:
+            return new_type
 
         if (
             isinstance(old_type.klass, type)
@@ -290,9 +328,12 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
     def set_parameters(self, parameters: list[Parameter]):
         for parameter in parameters:
-            # Create a structural type that will track accessed attributes/methods
-            self.variables[-1][parameter.name.lexeme] = Type(object, parameter.name)
-        pass
+            if parameter.is_varargs and self.varargs_type:
+                # VarArgs parameters get the VarArgs type with its methods
+                self.variables[-1][parameter.name.lexeme] = self.varargs_type
+            else:
+                # Regular parameters get a generic object type for structural typing
+                self.variables[-1][parameter.name.lexeme] = Type(object, parameter.name)
 
     def get_return_type(self) -> Type | None:
         ret = None
@@ -399,7 +440,20 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                         arg_token,
                     )
 
-        return callee_type.return_type
+        # Resolve parameter-dependent return types
+        return_type = callee_type.return_type
+        if return_type and return_type.klass is object:
+            # The return type is a parameter - find which one and use the argument type
+            param_name = return_type.token.lexeme
+            for i, param in enumerate(callee_type.parameters):
+                if param.name.lexeme == param_name and i < len(expression.arguments):
+                    arg = expression.arguments[i]
+                    arg_type = self.check(
+                        arg.value if isinstance(arg, Argument) else arg
+                    )
+                    return arg_type
+
+        return return_type
 
     def get_arg_name(self, arg_structure_value):
         if isinstance(arg_structure_value, Variable):
@@ -564,8 +618,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             try:
                 expression.name.type_ = self.get_common_type(previous_type, new_type)
             except TypeError:
-                previous_type_name = previous_type.klass.name.lexeme
-                new_type_name = new_type.klass.name.lexeme
+                previous_type_name = self.format_type_name(previous_type)
+                new_type_name = self.format_type_name(new_type)
                 self.parser_error(
                     expression.name.name,
                     f"Cannot redefine variable of type {previous_type_name} to type {new_type_name}.",
@@ -640,8 +694,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         try:
             type_ = self.get_common_type(previous_type, new_type)
         except TypeError:
-            previous_type_name = previous_type.klass.name.lexeme
-            new_type_name = new_type.klass.name.lexeme
+            previous_type_name = self.format_type_name(previous_type)
+            new_type_name = self.format_type_name(new_type)
             self.parser_error(
                 expression.name,
                 f"Cannot redefine attribute of type {previous_type_name} to type {new_type_name}.",
@@ -667,6 +721,10 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
             # For parameter attribute access, return a generic object type since we don't know the type yet
             return Type(object, expression.name)
+
+        # Handle None type (void)
+        if obj is None:
+            return None
 
         ret = obj.methods.get(expression.name.lexeme)
 
@@ -716,8 +774,8 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         try:
             return self.get_common_type(then_type, else_type)
         except TypeError:
-            previous_type_name = then_type.klass.name.lexeme
-            new_type_name = else_type.klass.name.lexeme
+            previous_type_name = self.format_type_name(then_type)
+            new_type_name = self.format_type_name(else_type)
             self.parser_error(
                 expression.keyword,
                 f"Got different return types in if expression: {previous_type_name} and {new_type_name}.",
@@ -782,11 +840,22 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                     "Max, you forgot to implement something!", expression.operator
                 )
 
+        # If left side is a parameter type, defer checking to call site
+        if left_type.klass is object:
+            # Track that this parameter needs the method
+            if isinstance(expression.left, Variable):
+                param = self.find_parameter(expression.left.name.lexeme)
+                if param is not None:
+                    method_token = make_internal_token(method)
+                    param.methods_called.append(method_token)
+            # Return object type since we don't know the result type yet
+            return Type(object, expression.operator)
+
         obj = left_type.methods.get(method)
         if obj is None:
             self.parser_error(
                 expression.operator,
-                f"<{left_type.klass.name.lexeme}> does not implement the {method} method.",
+                f"{self.format_type_name(left_type)} does not implement the {method} method.",
             )
 
         argument = Argument(None, expression.right)
@@ -803,7 +872,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         if iterate is None:
             self.parser_error(
                 statement.keyword,
-                f"Cannot iterate over instance of {in_name.klass.class_name} that does not implement 'iterate'.",
+                f"Cannot iterate over instance of {self.format_type_name(in_name)} that does not implement 'iterate'.",
             )
 
         next_ = iterate.return_type.methods.get("next")

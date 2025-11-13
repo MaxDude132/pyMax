@@ -99,20 +99,20 @@ def test_greater():
     assert run_source("print(1.3 > 1.2)") == "true"
     assert run_source("print(1.2 > 1.2)") == "false"
     assert run_source("print('test' > 'test ')") == formatted_error(
-        "Error at '>': <String> does not implement the greaterThan method.", 1
+        "Error at '>': <class String> does not implement the greaterThan method.", 1
     )
     assert run_source("print(1 > 'test')") == formatted_error(
         "Error at ''test'': Expected Int or Float but got String for parameter other in call to greaterThan.",
         1,
     )
     assert run_source("print(true > true)") == formatted_error(
-        "Error at '>': <Bool> does not implement the greaterThan method.", 1
+        "Error at '>': <class Bool> does not implement the greaterThan method.", 1
     )
     assert run_source("print(List(2) > List(2))") == formatted_error(
-        "Error at '>': <List> does not implement the greaterThan method.", 1
+        "Error at '>': <class List> does not implement the greaterThan method.", 1
     )
     assert run_source("print(Map(1 -> 'test') > Map(1 -> 'test'))") == formatted_error(
-        "Error at '>': <Map> does not implement the greaterThan method.", 1
+        "Error at '>': <class Map> does not implement the greaterThan method.", 1
     )
 
 
@@ -126,20 +126,20 @@ def test_greater_equals():
     assert run_source("print(1.2 >= 1.2)") == "true"
     assert run_source("print(1.1 >= 1.2)") == "false"
     assert run_source("print('test' >= 'test ')") == formatted_error(
-        "Error at '>=': <String> does not implement the greaterThan method.", 1
+        "Error at '>=': <class String> does not implement the greaterThan method.", 1
     )
     assert run_source("print(1 >= 'test')") == formatted_error(
         "Error at ''test'': Expected Int or Float but got String for parameter other in call to greaterThan.",
         1,
     )
     assert run_source("print(true >= true)") == formatted_error(
-        "Error at '>=': <Bool> does not implement the greaterThan method.", 1
+        "Error at '>=': <class Bool> does not implement the greaterThan method.", 1
     )
     assert run_source("print(List(2) >= List(2))") == formatted_error(
-        "Error at '>=': <List> does not implement the greaterThan method.", 1
+        "Error at '>=': <class List> does not implement the greaterThan method.", 1
     )
     assert run_source("print(Map(1 -> 'test') >= Map(1 -> 'test'))") == formatted_error(
-        "Error at '>=': <Map> does not implement the greaterThan method.", 1
+        "Error at '>=': <class Map> does not implement the greaterThan method.", 1
     )
 
 
@@ -151,20 +151,20 @@ def test_lesser():
     assert run_source("print(1.1 < 1.2)") == "true"
     assert run_source("print(1.2 < 1.2)") == "false"
     assert run_source("print('test' < 'test ')") == formatted_error(
-        "Error at '<': <String> does not implement the greaterThan method.", 1
+        "Error at '<': <class String> does not implement the greaterThan method.", 1
     )
     assert run_source("print(1 < 'test')") == formatted_error(
         "Error at ''test'': Expected Int or Float but got String for parameter other in call to greaterThan.",
         1,
     )
     assert run_source("print(true < true)") == formatted_error(
-        "Error at '<': <Bool> does not implement the greaterThan method.", 1
+        "Error at '<': <class Bool> does not implement the greaterThan method.", 1
     )
     assert run_source("print(List(2) < List(2))") == formatted_error(
-        "Error at '<': <List> does not implement the greaterThan method.", 1
+        "Error at '<': <class List> does not implement the greaterThan method.", 1
     )
     assert run_source("print(Map(1 -> 'test') < Map(1 -> 'test'))") == formatted_error(
-        "Error at '<': <Map> does not implement the greaterThan method.", 1
+        "Error at '<': <class Map> does not implement the greaterThan method.", 1
     )
 
 
@@ -178,18 +178,18 @@ def test_lesser_equals():
     assert run_source("print(1.2 <= 1.2)") == "true"
     assert run_source("print(1.3 <= 1.2)") == "false"
     assert run_source("print('test' <= 'test ')") == formatted_error(
-        "Error at '<=': <String> does not implement the greaterThan method.", 1
+        "Error at '<=': <class String> does not implement the greaterThan method.", 1
     )
     assert run_source("print(1 <= 'test')") == formatted_error(
         "Error at ''test'': Expected Int or Float but got String for parameter other in call to greaterThan.",
         1,
     )
     assert run_source("print(true <= true)") == formatted_error(
-        "Error at '<=': <Bool> does not implement the greaterThan method.", 1
+        "Error at '<=': <class Bool> does not implement the greaterThan method.", 1
     )
     assert run_source("print(List(2) <= List(2))") == formatted_error(
-        "Error at '<=': <List> does not implement the greaterThan method.", 1
+        "Error at '<=': <class List> does not implement the greaterThan method.", 1
     )
     assert run_source("print(Map(1 -> 'test') <= Map(1 -> 'test'))") == formatted_error(
-        "Error at '<=': <Map> does not implement the greaterThan method.", 1
+        "Error at '<=': <class Map> does not implement the greaterThan method.", 1
     )

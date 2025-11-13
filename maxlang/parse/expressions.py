@@ -195,6 +195,7 @@ class Lambda(Expression):
     token: Token
     params: list[Parameter]
     body: list[Statement]
+    # return_logic
 
 
 @dataclass
