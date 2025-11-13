@@ -33,6 +33,11 @@ class AstPrinter(Visitor):
     def visit_unary(self, expression) -> str:
         return self.parenthesize(expression.operator.lexeme, expression.right)
 
+    def visit_unpack(self, expression) -> str:
+        return self.parenthesize(
+            f"unpack {expression.operator.lexeme}", expression.expression
+        )
+
     def visit_variable(self, expression):
         return self.parenthesize(f"getvar {expression.name.lexeme}")
 

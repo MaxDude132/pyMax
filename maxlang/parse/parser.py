@@ -22,6 +22,7 @@ from .expressions import (
     Argument,
     Type,
     IfExpression,
+    Unpack,
 )
 from .statements import (
     Statement,
@@ -340,20 +341,27 @@ class ExpressionsParser(ParserControl):
 
         if not self.check(TokenType.RIGHT_PAREN):
             while True:
-                name_or_arg: Variable = self.expression()
-                if self.match(TokenType.COLON):
-                    self.skip_newlines()
-                    argument = Argument(name_or_arg.name, self.expression())
-                    has_named_arg = True
+                # Check for unpacking operator
+                if self.match(TokenType.STAR):
+                    star_token = self.previous()
+                    unpacked_expr = self.expression()
+                    argument = Argument(None, Unpack(star_token, unpacked_expr))
+                    arguments.append(argument)
                 else:
-                    if has_named_arg:
-                        raise self.error(
-                            self.previous(),
-                            "Cannot call with an unnamed argument after a named argument.",
-                        )
+                    name_or_arg: Variable = self.expression()
+                    if self.match(TokenType.COLON):
+                        self.skip_newlines()
+                        argument = Argument(name_or_arg.name, self.expression())
+                        has_named_arg = True
+                    else:
+                        if has_named_arg:
+                            raise self.error(
+                                self.previous(),
+                                "Cannot call with an unnamed argument after a named argument.",
+                            )
 
-                    argument = Argument(None, name_or_arg)
-                arguments.append(argument)
+                        argument = Argument(None, name_or_arg)
+                    arguments.append(argument)
                 if not self.match(TokenType.COMMA) or self.check(TokenType.RIGHT_PAREN):
                     break
 

@@ -59,6 +59,9 @@ class ExpressionVisitor:
     def visit_if_expression(self, expression: IfExpression):
         pass
 
+    def visit_unpack(self, expression: Unpack):
+        pass
+
 
 @dataclass
 class Type:
@@ -205,3 +208,9 @@ class IfExpression(Expression):
     then_branch: Statement
     else_branch: Statement
     keyword: Token
+
+
+@dataclass
+class Unpack(Expression):
+    operator: Token
+    expression: Expression

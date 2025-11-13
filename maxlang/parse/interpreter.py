@@ -106,7 +106,17 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
                 break
 
             value = self.evaluate(argument.value)
-            args.append(value)
+
+            # Check if this is an unpack marker
+            if (
+                isinstance(value, tuple)
+                and len(value) == 2
+                and value[0] == "__unpack__"
+            ):
+                # Unpack the values
+                args.extend(value[1])
+            else:
+                args.append(value)
 
         if callee.parameters and callee.parameters[-1].is_varargs:
             start_index = len(callee.parameters) - 1
@@ -245,6 +255,62 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
                 )
 
         return None
+
+    def visit_unpack(self, expression):
+        """
+        Handle unpacking of iterables using the * operator.
+        Returns a special marker that build_arguments will expand.
+        """
+        iterable = self.evaluate(expression.expression)
+
+        # Check if the object has an iterate method
+        try:
+            iterate_method = iterable.internal_find_method("iterate")
+        except (KeyError, AttributeError):
+            raise InterpreterError(
+                expression.operator,
+                f"{iterable.class_name} is not iterable (no iterate method).",
+            )
+
+        # Call iterate to get the iterator
+        iterator = self.call(expression.operator, iterate_method, [])
+
+        # Iterate through and collect all values
+        values = []
+        try:
+            next_method = iterator.internal_find_method("next")
+        except (KeyError, AttributeError):
+            raise InterpreterError(
+                expression.operator,
+                f"Iterator {iterator.class_name} does not have a next method.",
+            )
+
+        while True:
+            next_result = self.call(expression.operator, next_method, [])
+
+            # Get the value first - access it directly
+            try:
+                value = next_result.value
+                values.append(value)
+            except AttributeError:
+                raise InterpreterError(
+                    expression.operator,
+                    f"Next result {next_result.class_name} does not have value attribute.",
+                )
+
+            # Check if we're done iterating AFTER adding the value
+            try:
+                is_end = next_result.internal_find_method("is_end").value
+                if is_end:
+                    break
+            except (KeyError, AttributeError):
+                raise InterpreterError(
+                    expression.operator,
+                    f"Next result {next_result.class_name} does not have is_end attribute.",
+                )
+
+        # Return a special marker tuple so build_arguments knows to unpack
+        return ("__unpack__", values)
 
     def unary_operation(
         self,
