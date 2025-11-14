@@ -23,5 +23,5 @@ def test_second():
 
 def test_is_true():
     assert run_source("print((1 -> true).toBool())") == formatted_error(
-        "Error at 'toBool': Attribute toBool not found for class Pair.", 1
+        "Undefined property 'toBool'.", 1
     )

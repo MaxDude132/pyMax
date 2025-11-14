@@ -202,8 +202,9 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         obj = self.evaluate(expression.obj)
         if isinstance(obj, InstanceCallable):
             value = self.evaluate(expression.value)
-            obj.set(expression.name, value)
-            return value
+            # set() now returns a new instance
+            new_obj = obj.set(expression.name, value)
+            return new_obj
 
         raise InterpreterError(expression.name, "Only instances have fields.")
 

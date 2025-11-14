@@ -139,11 +139,6 @@ class Resolver(ExpressionVisitor, StatementVisitor):
             self.parser_error(statement.keyword, "Can't return from top-level code.")
 
         if statement.value is not None:
-            if self.current_function == FunctionType.INITIALIZER:
-                self.parser_error(
-                    statement.keyword, "Cannot return a value from an initialier."
-                )
-
             self.resolve(statement.value)
 
     def visit_while_statement(self, statement):
@@ -151,6 +146,10 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         self.resolve(statement.body)
 
     def visit_binary(self, expression):
+        self.resolve(expression.left)
+        self.resolve(expression.right)
+
+    def visit_pair(self, expression):
         self.resolve(expression.left)
         self.resolve(expression.right)
 

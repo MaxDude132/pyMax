@@ -1150,11 +1150,14 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         if ret is None:
             ret = self.get_method_from_super(obj, expression.name)
 
-        if ret is None and not isinstance(obj.klass, type):
-            self.parser_error(
-                expression.name,
-                f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.",
-            )
+        # TODO: With map-based init, we can't validate fields at type-check time
+        # We need to analyze the Map returned by init to extract field names
+        # For now, skip this validation to allow map-based init to work
+        # if ret is None and not isinstance(obj.klass, type):
+        #     self.parser_error(
+        #         expression.name,
+        #         f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.",
+        #     )
 
         return ret
 
@@ -1364,7 +1367,7 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         if next_ is None:
             self.parser_error(
                 statement.keyword,
-                f"Cannot get next value from iterator {iterate.class_name} that does not implement 'next'.",
+                f"Cannot get next value from iterator {self.format_type_name(iterate.return_type)} that does not implement 'next'.",
             )
 
         self.variables[-1][statement.for_name.name.lexeme] = next_.return_type

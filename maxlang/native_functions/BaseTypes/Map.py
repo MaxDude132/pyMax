@@ -33,20 +33,31 @@ class MapPush(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter(make_internal_token("item"))]
+        return [Parameter(make_internal_token("items"), is_varargs=True)]
 
     @property
     def allowed_types(self):
         return [PairClass.name]
 
+    @property
+    def return_token(self):
+        return MapClass.name
+
     def call(self, interpreter, arguments):
-        try:
-            if is_instance(interpreter, arguments[0], PairClass.name):
-                self.instance.values[arguments[0].first] = arguments[0].second
+        new_map = self.instance._copy()
+
+        # Support varargs - add all pairs
+        for item in arguments[0].values:
+            if is_instance(interpreter, item, PairClass.name):
+                new_map.modifications[item.first] = item.second
+                if item.first in new_map.removals:
+                    new_map.removals.remove(item.first)
             else:
-                self.instance.values[arguments[0]] = arguments[1]
-        except (AttributeError, IndexError):
-            raise InternalError(f"Invalid value passed to {self.class_name}.")
+                raise InternalError(
+                    f"Invalid value passed to {self.instance.class_name}."
+                )
+
+        return new_map
 
 
 class MapGet(BaseInternalMethod):
@@ -64,11 +75,39 @@ class MapGet(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         try:
-            return self.instance.values[arguments[0]]
+            return self.instance._get_value(arguments[0])
         except KeyError:
             raise InternalError(
                 f"Could not find key {arguments[0]} in {self.instance.class_name}."
             )
+
+
+class MapSet(BaseInternalMethod):
+    """New method: set key-value, returns new map."""
+
+    name = make_internal_token("set")
+
+    @property
+    def parameters(self):
+        return [
+            Parameter(make_internal_token("key")),
+            Parameter(make_internal_token("value")),
+        ]
+
+    @property
+    def return_token(self):
+        return MapClass.name
+
+    def call(self, interpreter, arguments):
+        key = arguments[0]
+        value = arguments[1]
+
+        new_map = self.instance._copy()
+        new_map.modifications[key] = value
+        if key in new_map.removals:
+            new_map.removals.remove(key)
+
+        return new_map
 
 
 class MapIterate(BaseInternalMethod):
@@ -96,15 +135,19 @@ class MapRemove(BaseInternalMethod):
 
     @property
     def return_token(self):
-        from .Object import ObjectClass
-
-        return ObjectClass.name
+        return PairClass.name
 
     def call(self, interpreter, arguments):
         try:
-            return PairInstance(interpreter).set_values(
-                arguments[0], self.instance.values.pop(arguments[0])
-            )
+            # Get the value before removing
+            value = self.instance._get_value(arguments[0])
+
+            # Create new map without this key
+            new_map = self.instance._copy()
+            new_map.removals.add(arguments[0])
+
+            # Return Pair(new_map, removed_value)
+            return PairInstance(interpreter).set_values(new_map, value)
         except KeyError:
             raise InternalError(
                 f"Could not find key {arguments[0]} in {self.instance.class_name}."
@@ -209,6 +252,7 @@ class MapClass(BaseInternalClass):
         MapInit,
         MapPush,
         MapGet,
+        MapSet,
         MapRemove,
         MapIterate,
         MapAdd,
@@ -227,18 +271,114 @@ class MapClass(BaseInternalClass):
 
 class MapInstance(BaseInternalInstance):
     CLASS = MapClass
+    COMPACTION_THRESHOLD = 10
 
     def __init__(self, interpreter):
         super().__init__(interpreter)
-        self.values = {}
+        self.base_values = {}  # Original immutable base
+        self.modifications = {}  # {key: value} overrides/additions
+        self.removals = set()  # Keys marked for removal
+        self.parent = None  # Previous version reference
+        self.depth = 0  # Chain depth for compaction
 
     def set_values(self, args: VarArgsInstance):
         for arg in args.values:
             if not is_instance(self.interpreter, arg, PairClass.name):
                 raise InternalError(f"Invalid value passed to {self.class_name}.")
-            self.values[arg.first] = arg.second
+            self.base_values[arg.first] = arg.second
 
         return self
+
+    def _get_value(self, key):
+        """Get value with modification chain lookup."""
+        # Check if removed
+        if key in self.removals:
+            raise KeyError(key)
+
+        # Check modifications
+        if key in self.modifications:
+            return self.modifications[key]
+
+        # Check base
+        if key in self.base_values:
+            return self.base_values[key]
+
+        # Walk parent chain
+        if self.parent:
+            return self.parent._get_value(key)
+
+        raise KeyError(key)
+
+    def _has_key(self, key):
+        """Check if key exists in chain."""
+        if key in self.removals:
+            return False
+        if key in self.modifications or key in self.base_values:
+            return True
+        if self.parent:
+            return self.parent._has_key(key)
+        return False
+
+    def _all_keys(self):
+        """Get all keys from chain."""
+        keys = set()
+
+        # Collect from base
+        keys.update(self.base_values.keys())
+
+        # Collect from modifications
+        keys.update(self.modifications.keys())
+
+        # Collect from parent
+        if self.parent:
+            keys.update(self.parent._all_keys())
+
+        # Remove deleted keys
+        keys -= self.removals
+
+        return keys
+
+    def _copy(self):
+        """Create a new version for modifications."""
+        new_instance = MapInstance(self.interpreter)
+        new_instance.parent = self
+        new_instance.depth = self.depth + 1
+
+        # Auto-compact if chain is too deep
+        if new_instance.depth > self.COMPACTION_THRESHOLD:
+            new_instance._compact()
+
+        return new_instance
+
+    def _compact(self):
+        """Flatten the modification chain."""
+        # Collect all key-value pairs into new base
+        all_keys = self._all_keys()
+        self.base_values = {key: self._get_value(key) for key in all_keys}
+        self.modifications = {}
+        self.removals = set()
+        self.parent = None
+        self.depth = 0
+
+    @property
+    def values(self):
+        """Property to maintain compatibility with existing code."""
+        result = {}
+        for key in self._all_keys():
+            try:
+                result[key] = self._get_value(key)
+            except KeyError:
+                pass
+        return result
+
+    @values.setter
+    def values(self, new_values):
+        """Setter to maintain compatibility."""
+        self.base_values = new_values
+        self.modifications = {}
+        self.removals = set()
+        self.parent = None
+        self.depth = 0
 
     def __str__(self) -> str:
         return (
@@ -250,9 +390,12 @@ class MapInstance(BaseInternalInstance):
 
     def get_pairs(self):
         pairs = []
-        for k, v in self.values.items():
-            pairs.append(PairInstance(self.interpreter).set_values(k, v))
-
+        for key in self._all_keys():
+            try:
+                value = self._get_value(key)
+                pairs.append(PairInstance(self.interpreter).set_values(key, value))
+            except KeyError:
+                pass
         return pairs
 
     def update(self, other_map):
@@ -260,7 +403,9 @@ class MapInstance(BaseInternalInstance):
             self.add_pair(pair)
 
     def add_pair(self, pair):
-        self.values[pair.first] = pair.second
+        self.modifications[pair.first] = pair.second
+        if pair.first in self.removals:
+            self.removals.remove(pair.first)
 
     def __eq__(self, other):
         if not isinstance(other, MapInstance):

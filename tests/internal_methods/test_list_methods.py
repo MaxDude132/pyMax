@@ -39,7 +39,7 @@ def test_push():
     assert (
         run_source("""
 test = List(1)
-test.push(List(2))
+test = test.push(List(2))
 print(test)
 """)
         == "List(1, List(2))"
@@ -47,7 +47,7 @@ print(test)
     assert (
         run_source("""
 test = List(1)
-test.push(true)
+test = test.push(true)
 print(test)
 """)
         == "List(1, true)"
@@ -58,7 +58,14 @@ def test_pop():
     assert run_source("print(List().pop())") == formatted_error(
         "No more items in <List>.", 1
     )
-    assert run_source("print(List(1).pop())") == "1"
+    # pop() now returns Pair(new_list, value)
+    assert (
+        run_source("""
+result = List(1).pop()
+print(result.second)
+""")
+        == "1"
+    )
 
 
 def test_get():
@@ -72,14 +79,14 @@ def test_extend():
     assert (
         run_source("""
 test = List(1)
-test.extend(List(2))
+test = test.extend(List(2))
 print(test)
 """)
         == "List(1, 2)"
     )
     assert run_source("""
 test = List(1)
-test.extend(true)
+test = test.extend(true)
 print(test)
 """) == formatted_error(
         "Error at 'true': Expected List but got Bool for parameter other in call to extend.",

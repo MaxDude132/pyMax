@@ -6,13 +6,13 @@ def test_super_with_method():
         run_source("""
 class Test {
     init: value {
-        self.value = value            
+        return Map("value" -> value)
     }                
 }
                       
 class OtherTest: Test {
     init: value {
-        super.init(value)                  
+        return super.init(value)
     }
 }
                       
@@ -28,13 +28,13 @@ def test_super_without_method():
         run_source("""
 class Test {
     init: value {
-        self.value = value            
+        return Map("value" -> value)
     }                
 }
                       
 class OtherTest: Test {
     init: value {
-        super(value)                  
+        return super(value)
     }
 }
                       
@@ -69,13 +69,13 @@ class First {
                       
 class Second {
     init: value {
-        self.value = value                  
+        return Map("value" -> value)
     }
 }
                       
 class Third: First, Second {
     init: value {
-        super(value)                  
+        return super(value)
     }
 }
                       
@@ -92,19 +92,19 @@ def test_super_chained_inheritance():
         run_source("""
 class First {    
     init: value {
-        self.value = value                  
+        return Map("value" -> value)
     }   
 }
                       
 class Second: First {
     init: value {
-        super(value)                  
+        return super(value)
     }
 }
                       
 class Third: Second {
     init: value {
-        super(value)                  
+        return super(value)
     }
 }
                       
@@ -120,7 +120,7 @@ def test_super_method_call():
         run_source("""
 class First {    
     init: value {
-        self.value = value                  
+        return Map("value" -> value)
     }   
 }
                       

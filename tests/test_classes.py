@@ -20,7 +20,7 @@ def test_class_init():
             """
 class Test {
     init: arg {
-        self.arg = arg
+        return Map("arg" -> arg)
     }
 }
 test = Test("test")
@@ -36,7 +36,7 @@ def test_get_attribute_on_class():
         """
 class Test {
     init: arg {
-        self.arg = arg
+        return Map("arg" -> arg)
     }
 }
 print(Test.arg)

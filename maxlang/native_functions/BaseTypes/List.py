@@ -25,10 +25,18 @@ class ListPush(BaseInternalMethod):
 
     @property
     def parameters(self):
-        return [Parameter(make_internal_token("other"))]
+        return [Parameter(make_internal_token("items"), is_varargs=True)]
+
+    @property
+    def return_token(self):
+        return ListClass.name
 
     def call(self, interpreter, arguments):
-        self.instance.values.append(arguments[0])
+        new_list = self.instance._copy()
+        # Support varargs - add all items
+        for item in arguments[0].values:
+            new_list.additions.append(item)
+        return new_list
 
 
 class ListPop(BaseInternalMethod):
@@ -36,15 +44,26 @@ class ListPop(BaseInternalMethod):
 
     @property
     def return_token(self):
-        from .Object import ObjectClass
+        from .Pair import PairClass
 
-        return ObjectClass.name
+        return PairClass.name
 
     def call(self, interpreter, arguments):
-        try:
-            return self.instance.values.pop()
-        except IndexError:
+        from .Pair import PairInstance
+
+        total_len = self.instance._total_length()
+        if total_len == 0:
             raise InternalError(f"No more items in {self.instance.class_name}.")
+
+        # Get the last item
+        last_item = self.instance._get_value(total_len - 1)
+
+        # Create new list without last item
+        new_list = self.instance._copy()
+        new_list.modifications[total_len - 1] = None  # Mark as removed
+
+        # Return Pair(new_list, popped_value)
+        return PairInstance(interpreter).set_values(new_list, last_item)
 
 
 class ListGet(BaseInternalMethod):
@@ -68,8 +87,47 @@ class ListGet(BaseInternalMethod):
 
     def call(self, interpreter, arguments):
         try:
-            return self.instance.values[int(arguments[0].value)]
+            index = int(arguments[0].value)
+            return self.instance._get_value(index)
         except (ValueError, IndexError, TypeError, AttributeError):
+            raise InternalError(f"{arguments[0]} is not a valid index.")
+
+
+class ListSet(BaseInternalMethod):
+    """New method: set value at index, returns new list."""
+
+    name = make_internal_token("set")
+
+    @property
+    def parameters(self):
+        return [
+            Parameter(make_internal_token("index")),
+            Parameter(make_internal_token("value")),
+        ]
+
+    @property
+    def allowed_types(self):
+        from .Int import IntClass
+
+        return [IntClass.name]
+
+    @property
+    def return_token(self):
+        return ListClass.name
+
+    def call(self, interpreter, arguments):
+        try:
+            index = int(arguments[0].value)
+            value = arguments[1]
+
+            # Validate index is in range
+            if index < 0 or index >= self.instance._total_length():
+                raise InternalError(f"Index {index} out of range")
+
+            new_list = self.instance._copy()
+            new_list.modifications[index] = value
+            return new_list
+        except (ValueError, TypeError, AttributeError):
             raise InternalError(f"{arguments[0]} is not a valid index.")
 
 
@@ -84,6 +142,10 @@ class ListExtend(BaseInternalMethod):
     def allowed_types(self):
         return [ListClass.name]
 
+    @property
+    def return_token(self):
+        return ListClass.name
+
     def call(self, interpreter, arguments):
         if not is_instance(interpreter, arguments[0], ListClass.name):
             raise InternalError(
@@ -93,7 +155,9 @@ class ListExtend(BaseInternalMethod):
         if arguments[0] == self.instance:
             raise InternalError("Cannot extend a List with itself.")
 
-        self.instance.extend(arguments[0].values)
+        new_list = self.instance._copy()
+        new_list.extend(arguments[0].values)
+        return new_list
 
 
 class ListIterate(BaseInternalMethod):
@@ -229,6 +293,7 @@ class ListClass(BaseInternalClass):
         ListInit,
         ListPush,
         ListGet,
+        ListSet,
         ListPop,
         ListExtend,
         ListIterate,
@@ -249,20 +314,106 @@ class ListClass(BaseInternalClass):
 
 class ListInstance(BaseInternalInstance):
     CLASS = ListClass
+    COMPACTION_THRESHOLD = 10
 
     def __init__(self, interpreter):
         super().__init__(interpreter)
-        self.values = []
+        self.base_values = []  # Original immutable base
+        self.modifications = {}  # {index: value} overrides
+        self.additions = []  # Items appended after base
+        self.parent = None  # Previous version reference
+        self.depth = 0  # Chain depth for compaction
 
     def set_values(self, *args):
-        self.values = [*args]
+        self.base_values = [*args]
         return self
+
+    def _total_length(self):
+        """Calculate total length including parent chain."""
+        base_len = len(self.base_values)
+        additions_len = len(self.additions)
+
+        # Count items from parent if exists
+        if self.parent:
+            parent_len = self.parent._total_length()
+            return max(parent_len, base_len) + additions_len
+
+        return base_len + additions_len
+
+    def _get_value(self, index):
+        """Get value with modification chain lookup."""
+        # Check additions first
+        base_len = (
+            len(self.base_values) if not self.parent else self.parent._total_length()
+        )
+        if index >= base_len:
+            addition_index = index - base_len
+            if addition_index < len(self.additions):
+                return self.additions[addition_index]
+            raise IndexError(f"Index {index} out of range")
+
+        # Check modifications
+        if index in self.modifications:
+            value = self.modifications[index]
+            if value is None:  # Marked as removed
+                raise IndexError(f"Index {index} has been removed")
+            return value
+
+        # Check base values
+        if index < len(self.base_values):
+            return self.base_values[index]
+
+        # Walk parent chain
+        if self.parent:
+            return self.parent._get_value(index)
+
+        raise IndexError(f"Index {index} out of range")
+
+    def _copy(self):
+        """Create a new version for modifications."""
+        new_instance = ListInstance(self.interpreter)
+        new_instance.parent = self
+        new_instance.depth = self.depth + 1
+
+        # Auto-compact if chain is too deep
+        if new_instance.depth > self.COMPACTION_THRESHOLD:
+            new_instance._compact()
+
+        return new_instance
+
+    def _compact(self):
+        """Flatten the modification chain."""
+        # Collect all values into new base
+        total_len = self._total_length()
+        self.base_values = [self._get_value(i) for i in range(total_len)]
+        self.modifications = {}
+        self.additions = []
+        self.parent = None
+        self.depth = 0
+
+    @property
+    def values(self):
+        """Property to maintain compatibility with existing code."""
+        # Return all values as a list
+        try:
+            return [self._get_value(i) for i in range(self._total_length())]
+        except IndexError:
+            return []
+
+    @values.setter
+    def values(self, new_values):
+        """Setter to maintain compatibility."""
+        self.base_values = new_values
+        self.modifications = {}
+        self.additions = []
+        self.parent = None
+        self.depth = 0
 
     def __str__(self) -> str:
         return self.internal_find_method("toString").call(self.interpreter, [])
 
     def extend(self, other_list):
-        self.values.extend(other_list)
+        self.additions.extend(other_list)
 
     def __eq__(self, other):
         if not isinstance(other, ListInstance):

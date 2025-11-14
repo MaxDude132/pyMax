@@ -55,7 +55,7 @@ def test_push():
     assert (
         run_source("""
 test = Map(1 -> "test")
-test.push(2 -> Map(2 -> "test2"))
+test = test.push(2 -> Map(2 -> "test2"))
 print(test)
 """)
         == 'Map(1 -> "test", 2 -> Map(2 -> "test2"))'
@@ -64,7 +64,7 @@ print(test)
     assert (
         run_source("""
 test = Map(1 -> 'test')
-test.push(2 -> 'test2')
+test = test.push(2 -> 'test2')
 print(test)
 """)
         == 'Map(1 -> "test", 2 -> "test2")'
@@ -72,10 +72,11 @@ print(test)
 
     assert run_source("""
 test = Map(1 -> 'test')
-test.push(2)
+test = test.push(2)
 print(test)
 """) == formatted_error(
-        "Error at '2': Expected Pair but got Int for parameter item in call to push.", 3
+        "Error at '2': Expected Pair but got Int for parameter items in call to push.",
+        3,
     )
 
 
@@ -87,7 +88,14 @@ def test_get():
 
 
 def test_remove():
-    assert run_source("print(Map(1 -> 'test').remove(1))") == 'Pair(1, "test")'
+    # remove() now returns Pair(new_map, removed_value)
+    assert (
+        run_source("""
+result = Map(1 -> 'test').remove(1)
+print(result.second)
+""")
+        == "test"
+    )
     assert run_source("print(Map().remove(1))") == formatted_error(
         "Could not find key 1 in <Map>.", 1
     )

@@ -22,16 +22,16 @@
 - improve iterations to be lazily calulated instead of all at once -- DONE
 - allow classes implementing `next` and becoming generators -- DONE
 - implement static duck typing -- DONE
+- look into making everything immutable
+- add {} syntax for maps
+- add [] syntax for loops
+- implement iterable and map destructing
 - create a syntax for ranges
 - implement enums
 - implement pattern matching with `when` as in Kotlin, but where patterns can be chained in a single condition
 - implement interfaces
 - implement proper error handling, with Res returns that can be passed down easily
 - improve error system with different error types, more complete error messages
-- implement addEquals
-- implement substractEquals
-- implement multiplyEquals
-- implement divideEquals
 - implement integer division between classes (//) through the int_divide method
 - implement modulo between classes (%) through the modulo method
 - implement exponentiation between classes (**) through the power method

@@ -28,9 +28,7 @@ def test_unpack_varargs_to_class_init():
             """
 class Container {
     init: a, b, c {
-        self.a = a
-        self.b = b
-        self.c = c
+        return Map("a" -> a, "b" -> b, "c" -> c)
     }
 }
 
@@ -59,9 +57,9 @@ tester: a, b, c {
 }
 
 values = List()
-values.push(1)
-values.push(2)
-values.push(3)
+values = values.push(1)
+values = values.push(2)
+values = values.push(3)
 
 tester(*values)
         """
@@ -76,10 +74,11 @@ def test_unpack_custom_iterable():
             """
 class Wrapper {
     init: varargs values {
-        self.list = List()
+        list = List()
         for v in values {
-            self.list.push(v)
+            list = list.push(v)
         }
+        return Map("list" -> list)
     }
     
     iterate {
@@ -217,8 +216,8 @@ class Calculator {
 
 calc = Calculator()
 values = List()
-values.push(10)
-values.push(20)
+values = values.push(10)
+values = values.push(20)
 
 result = calc.add(*values)
 print(result)
@@ -259,9 +258,9 @@ tester: varargs values {
 }
 
 values = List()
-values.push("first")
-values.push("second")
-values.push("third")
+values = values.push("first")
+values = values.push("second")
+values = values.push("third")
 
 tester(*values)
         """
@@ -276,14 +275,13 @@ def test_unpack_in_nested_class_init():
             """
 class Inner {
     init: a, b {
-        self.a = a
-        self.b = b
+        return Map("a" -> a, "b" -> b)
     }
 }
 
 class Outer {
     init: varargs values {
-        self.inner = Inner(*values)
+        return Map("inner" -> Inner(*values))
     }
 }
 
@@ -302,9 +300,9 @@ def test_unpack_return_value():
             """
 makeList: varargs dummy {
     list = List()
-    list.push(1)
-    list.push(2)
-    list.push(3)
+    list = list.push(1)
+    list = list.push(2)
+    list = list.push(3)
     return list
 }
 
@@ -332,8 +330,8 @@ tester: a, b, c {
 }
 
 values = List()
-values.push(2)
-values.push(3)
+values = values.push(2)
+values = values.push(3)
 
 tester(1, *values)
         """
@@ -524,9 +522,9 @@ processor: varargs values {
     print(result)
 }
 list = List()
-list.push(1)
-list.push(2)
-list.push(3)
+list = list.push(1)
+list = list.push(2)
+list = list.push(3)
 processor(*list)
         """
         )
@@ -542,9 +540,9 @@ processor: varargs values {
     }
 }
 list = List()
-list.push(1)
-list.push(2)
-list.push(3)
+list = list.push(1)
+list = list.push(2)
+list = list.push(3)
 processor(*list)
         """
         )

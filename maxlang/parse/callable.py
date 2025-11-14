@@ -28,7 +28,13 @@ class InternalCallable:
         return len(self.parameters)
 
     def lower_arity(self) -> int:
-        return len([arg for arg in self.parameters if arg.default is None and not arg.is_varargs])
+        return len(
+            [
+                arg
+                for arg in self.parameters
+                if arg.default is None and not arg.is_varargs
+            ]
+        )
 
     @property
     def parameters(self) -> list[Parameter]:
@@ -116,7 +122,33 @@ class ClassCallable(InternalCallable):
         instance = InstanceCallable(self)
         initialiser = self.find_method(Token(TokenType.IDENTIFIER, "init", None, -1))
         if initialiser is not None:
-            initialiser.bind(instance).call(interpreter, arguments)
+            # Call init and check if it returns a map-like object
+            result = initialiser.bind(instance).call(interpreter, arguments)
+
+            # If init returns a map (dict-like with field definitions), use it
+            if (
+                result is not None
+                and hasattr(result, "values")
+                and isinstance(result.values, dict)
+            ):
+                # Map-based init: create instance from returned map
+                from maxlang.native_functions.BaseTypes.Map import MapInstance
+                from maxlang.native_functions.BaseTypes.String import StringInstance
+
+                if isinstance(result, MapInstance):
+                    for key in result._all_keys():
+                        try:
+                            value = result._get_value(key)
+                            # Convert key to string
+                            if isinstance(key, StringInstance):
+                                field_name = key.value
+                            elif hasattr(key, "value"):
+                                field_name = str(key.value)
+                            else:
+                                field_name = str(key)
+                            instance.fields[field_name] = value
+                        except KeyError:
+                            pass
         return instance
 
     def check_arity(self, arg_count: int) -> bool:
@@ -176,6 +208,55 @@ class ClassCallable(InternalCallable):
         return self.class_name
 
 
+class InstanceCopyMethod(InternalCallable):
+    """Internal method that provides copy() functionality for user-defined instances."""
+
+    def __init__(self, instance: InstanceCallable):
+        self.instance = instance
+
+    def call(self, interpreter: "Interpreter", arguments: list[Any]) -> Any | None:
+        """Call copy with field modifications.
+
+        Arguments must be Pair objects (field_name -> value)
+        """
+        from maxlang.native_functions.BaseTypes.Pair import PairInstance
+        from maxlang.native_functions.BaseTypes.String import StringInstance
+
+        modifications = {}
+        for arg in arguments:
+            if not isinstance(arg, PairInstance):
+                raise InterpreterError(
+                    Token(TokenType.IDENTIFIER, "copy", None, -1),
+                    f"copy() arguments must be Pair objects (field -> value), got {type(arg)}",
+                )
+
+            # Extract field name from Pair
+            key = arg.first
+            if isinstance(key, StringInstance):
+                field_name = key.value
+            else:
+                raise InterpreterError(
+                    Token(TokenType.IDENTIFIER, "copy", None, -1),
+                    f"Field name must be a String, got {type(key)}",
+                )
+
+            modifications[field_name] = arg.second
+
+        return self.instance.copy(**modifications)
+
+    def check_arity(self, arg_count: int) -> bool:
+        return True  # Accepts any number of arguments
+
+    def upper_arity(self) -> int:
+        return float("inf")
+
+    def lower_arity(self) -> int:
+        return 0
+
+    def __str__(self) -> str:
+        return f"<method 'copy' of instance {self.instance.class_name}>"
+
+
 class InstanceCallable(InternalCallable):
     def __init__(self, klass: ClassCallable):
         self.klass = klass
@@ -184,6 +265,10 @@ class InstanceCallable(InternalCallable):
     def get(self, name: Token):
         if name.lexeme in getattr(self, "fields", ()):
             return self.fields[name.lexeme]
+
+        # Special case for built-in copy method
+        if name.lexeme == "copy":
+            return InstanceCopyMethod(self)
 
         method = self.klass.find_method(name)
         if method is not None:
@@ -199,8 +284,52 @@ class InstanceCallable(InternalCallable):
                 f"Could not find method {name} on class {self.class_name.lexeme}."
             )
 
+    def copy(self, **modifications):
+        """Create new instance with field modifications.
+
+        Args:
+            **modifications: Field name -> value pairs
+
+        Returns:
+            New InstanceCallable with modified fields
+
+        Raises:
+            InterpreterError: If field name not in self.fields
+        """
+        # Validate all fields exist
+        for field_name in modifications:
+            if field_name not in self.fields:
+                raise InterpreterError(
+                    Token(TokenType.IDENTIFIER, field_name, None, -1),
+                    f"Cannot modify undefined field '{field_name}'. "
+                    f"Class only defines: {', '.join(self.fields.keys())}",
+                )
+
+        new_instance = InstanceCallable(self.klass)
+
+        # Shallow copy existing fields (structural sharing)
+        new_instance.fields = self.fields.copy()
+
+        # Apply modifications
+        for field_name, value in modifications.items():
+            new_instance.fields[field_name] = value
+
+        return new_instance
+
     def set(self, name: Token, value: Any):
-        self.fields[name.lexeme] = value
+        """Set field value (returns new instance).
+
+        This method is called by visit_set in interpreter.
+        Returns new instance instead of mutating.
+        """
+        if name.lexeme not in self.fields:
+            raise InterpreterError(
+                name,
+                f"Cannot set undefined field '{name.lexeme}'. "
+                f"Class only defines: {', '.join(self.fields.keys())}",
+            )
+
+        return self.copy(**{name.lexeme: value})
 
     @property
     def class_name(self):
