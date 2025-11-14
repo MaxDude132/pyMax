@@ -134,6 +134,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         # Track which loop variables come from iterating over varargs parameters
         # Maps loop variable name -> varargs parameter
         self.loop_var_to_varargs: dict[str, Parameter] = {}
+        # Track Object-type loop variables and their requirements
+        # Maps loop variable name -> (iterable_type, Parameter tracking requirements)
+        self.loop_var_trackers: dict[str, tuple[Type, Parameter]] = {}
 
     def get_current_function_parameters(self) -> list[Parameter]:
         return (
@@ -585,6 +588,12 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             varargs_param.methods_called.append(expression.callee.name)
             return Type(object, expression.callee.name)
 
+        # Track method calls on Object-type loop variables
+        if self._is_method_call_on_object_loop_var(expression):
+            _, tracker = self.loop_var_trackers[expression.callee.obj.name.lexeme]
+            tracker.methods_called.append(expression.callee.name)
+            return Type(object, expression.callee.name)
+
         # Handle recursive calls
         if self._is_recursive_call(expression):
             return Deferred(expression.callee.name)
@@ -607,6 +616,14 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             isinstance(expression.callee, Get)
             and isinstance(expression.callee.obj, Variable)
             and expression.callee.obj.name.lexeme in self.loop_var_to_varargs
+        )
+
+    def _is_method_call_on_object_loop_var(self, expression):
+        """Check if this is a method call on an Object-type loop variable."""
+        return (
+            isinstance(expression.callee, Get)
+            and isinstance(expression.callee.obj, Variable)
+            and expression.callee.obj.name.lexeme in self.loop_var_trackers
         )
 
     def _is_recursive_call(self, expression):
@@ -1446,14 +1463,21 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                     "Max, you forgot to implement something!", expression.operator
                 )
 
-        # If left side is a parameter type, defer checking to call site
-        if left_type.klass is object:
-            # Track that this parameter needs the method
+        # If left side is a parameter type or Object type, defer checking to runtime
+        if left_type.klass is object or isinstance(left_type.klass, ObjectClass):
+            # Track that this parameter needs the method (if it's a parameter)
             if isinstance(expression.left, Variable):
                 param = self.find_parameter(expression.left.name.lexeme)
                 if param is not None:
                     method_token = make_internal_token(method)
                     param.methods_called.append(method_token)
+
+                # Also track for loop variables
+                if expression.left.name.lexeme in self.loop_var_trackers:
+                    _, tracker = self.loop_var_trackers[expression.left.name.lexeme]
+                    method_token = make_internal_token(method)
+                    tracker.methods_called.append(method_token)
+
             # Return object type since we don't know the result type yet
             return Type(object, expression.operator)
 
@@ -1489,7 +1513,35 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 f"Cannot get next value from iterator {self.format_type_name(iterate.return_type)} that does not implement 'next'.",
             )
 
-        self.variables[-1][statement.for_name.name.lexeme] = next_.return_type
+        # The next() method returns a Pair, but the for loop extracts pair.first
+        # So we need to get the type of the first element of the pair
+        pair_type = next_.return_type
+        first_attr = pair_type.methods.get("first")
+
+        if first_attr is None:
+            # If there's no 'first' attribute, use the pair type itself (shouldn't happen for standard iterators)
+            loop_var_type = pair_type
+        else:
+            loop_var_type = first_attr.return_type
+
+        self.variables[-1][statement.for_name.name.lexeme] = loop_var_type
+
+        # Track Object-type loop variables so we can validate method calls
+        if loop_var_type.klass is object or isinstance(
+            loop_var_type.klass, ObjectClass
+        ):
+            # Create a Parameter-like object to track what's called on this loop variable
+            loop_var_tracker = Parameter(
+                name=statement.for_name.name,
+                default=None,
+                is_varargs=False,
+                attributes_accessed=[],
+                methods_called=[],
+            )
+            self.loop_var_trackers[statement.for_name.name.lexeme] = (
+                in_name,
+                loop_var_tracker,
+            )
 
         # Check if we're iterating over a varargs parameter
         if (
@@ -1502,6 +1554,33 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
                 self.loop_var_to_varargs[statement.for_name.name.lexeme] = param
 
         self.check_many(statement.body)
+
+        # Validate Object-type loop variables against actual item types
+        if statement.for_name.name.lexeme in self.loop_var_trackers:
+            iterable_type, tracker = self.loop_var_trackers[
+                statement.for_name.name.lexeme
+            ]
+            if tracker.attributes_accessed or tracker.methods_called:
+                # Check if we're iterating over a List literal (e.g., List(1, 2, 3))
+                if (
+                    isinstance(statement.in_name, Call)
+                    and isinstance(statement.in_name.callee, Variable)
+                    and statement.in_name.callee.name.lexeme == "List"
+                ):
+                    # Validate each item in the List against the operations performed
+                    for arg in statement.in_name.arguments:
+                        item_type = self.check(arg.value)
+                        self.validate_structural_requirements(
+                            item_type,
+                            tracker.attributes_accessed,
+                            tracker.methods_called,
+                            statement.for_name.name,
+                        )
+                else:
+                    # For other Object types, defer to runtime (no validation)
+                    pass
+
+            del self.loop_var_trackers[statement.for_name.name.lexeme]
 
         # Clean up the loop variable tracking when exiting the for loop scope
         if statement.for_name.name.lexeme in self.loop_var_to_varargs:

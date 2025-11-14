@@ -210,3 +210,28 @@ print(range.current)
         )
         == "0\n1\n2\n0"
     )
+
+
+def test_type_of_object_in_for_loop():
+    assert (
+        run_source(
+            """
+for i in List(1, 2, 3) {
+    print(i + 1)
+}
+        """
+        )
+        == "2\n3\n4"
+    )
+
+
+def test_illegal_call_on_object_in_for_loop():
+    assert run_source(
+        """
+for i in List(1, 2, 3) {
+    print(i.inexistent())
+}
+        """
+    ) == formatted_error(
+        "Error at 'i': <class Int> does not have required method 'inexistent'.", 2
+    )

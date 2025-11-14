@@ -3,6 +3,18 @@ from maxlang import Max
 import io
 
 
+class SourceRunner:
+    def __init__(self):
+        self.max = Max()
+
+    def run(self, source) -> str:
+        out = io.StringIO()
+        err = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            self.max.run_source(source)
+        return out.getvalue().strip() or err.getvalue().strip()
+
+
 def run_source(source) -> str:
     out = io.StringIO()
     err = io.StringIO()

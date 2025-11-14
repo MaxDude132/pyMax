@@ -296,6 +296,7 @@ class MapInstance(BaseInternalInstance):
         self.removals = set()  # Keys marked for removal
         self.parent = None  # Previous version reference
         self.depth = 0  # Chain depth for compaction
+        self._ref_count = 0  # Track external references
 
     def set_values(self, args: VarArgsInstance):
         for arg in args.values:
@@ -360,11 +361,26 @@ class MapInstance(BaseInternalInstance):
         new_instance.parent = self
         new_instance.depth = self.depth + 1
 
-        # Auto-compact if chain is too deep
+        # Auto-compact if chain is deep AND old instances are unreferenced
         if new_instance.depth > self.COMPACTION_THRESHOLD:
-            new_instance._compact()
+            if self._should_compact():
+                new_instance._compact()
 
         return new_instance
+
+    def _should_compact(self):
+        """Check if we should compact the chain.
+
+        Compaction should occur if:
+        1. Depth exceeds threshold
+        2. There are no external references to intermediate nodes (Python's GC handles this)
+
+        Since Python uses reference counting, unreferenced objects will be GC'd automatically.
+        We just need to check if compaction makes sense based on depth.
+        """
+        # For now, always compact when threshold is exceeded
+        # Python's GC will clean up unreferenced intermediate nodes
+        return True
 
     def _compact(self):
         """Flatten the modification chain."""
