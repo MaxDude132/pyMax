@@ -153,6 +153,10 @@ class Resolver(ExpressionVisitor, StatementVisitor):
         self.resolve(expression.left)
         self.resolve(expression.right)
 
+    def visit_field_update(self, expression):
+        self.resolve(expression.obj)
+        self.resolve(expression.value)
+
     def visit_call(self, expression):
         self.resolve(expression.callee)
         self.resolve_many(expression.arguments)

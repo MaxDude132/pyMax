@@ -62,6 +62,9 @@ class ExpressionVisitor:
     def visit_unpack(self, expression: Unpack):
         pass
 
+    def visit_field_update(self, expression: FieldUpdate):
+        pass
+
 
 @dataclass
 class Type:
@@ -73,6 +76,9 @@ class Type:
     return_type: Type | None = None
     calls_super: bool = False
     return_paths: list = field(default_factory=list)  # List of ReturnPath objects
+    field_types: dict[str, Type] = field(
+        default_factory=dict
+    )  # Maps field names to their types (from init)
 
 
 @dataclass
@@ -214,3 +220,10 @@ class IfExpression(Expression):
 class Unpack(Expression):
     operator: Token
     expression: Expression
+
+
+@dataclass
+class FieldUpdate(Expression):
+    obj: Expression
+    operator: Token
+    value: Expression

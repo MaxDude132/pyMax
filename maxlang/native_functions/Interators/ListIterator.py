@@ -3,7 +3,6 @@ from __future__ import annotations
 from ..main import BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from .BaseIterator import BaseIteratorClass, BaseIteratorInstance
-from ..BaseTypes.Next import NextInstance
 
 
 class ListIteratorNext(BaseInternalMethod):
@@ -17,20 +16,27 @@ class ListIteratorNext(BaseInternalMethod):
         return ObjectClass.name
 
     def call(self, interpreter, arguments):
-        from ..BaseTypes.Bool import BoolInstance
+        from ..BaseTypes.Pair import PairInstance
 
-        value = self.instance.value.values[self.instance.current]
-        is_end = BoolInstance(interpreter).set_value(self.instance.current == self.instance.limit - 1)
-        next_ = NextInstance(interpreter).set_values(value, is_end)
-        self.instance.current += 1
-        return next_
+        # If we're past the end, return None (special marker for end-of-iteration)
+        if self.instance.current >= self.instance.limit:
+            return None
+
+        # Get current value using _get_value method (List uses persistent structure)
+        value = self.instance.value._get_value(self.instance.current)
+
+        # Create new iterator with incremented position
+        new_iterator = ListIteratorInstance(interpreter)
+        new_iterator.value = self.instance.value
+        new_iterator.limit = self.instance.limit
+        new_iterator.current = self.instance.current + 1
+
+        return PairInstance(interpreter).set_values(value, new_iterator)
 
 
 class ListIteratorClass(BaseIteratorClass):
     name = make_internal_token("ListIterator")
-    FIELDS = (
-        ListIteratorNext,
-    )
+    FIELDS = (ListIteratorNext,)
 
     @property
     def instance_class(self):
@@ -53,7 +59,7 @@ class ListIteratorInstance(BaseIteratorInstance):
 
         if is_instance(self.interpreter, value, ListClass.name):
             self.value = value
-            self.limit = len(self.value.values)
+            self.limit = self.value._total_length()
         else:
             raise InternalError(f"Invalid value passed to {self.class_name}.")
 

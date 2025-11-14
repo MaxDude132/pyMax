@@ -19,6 +19,7 @@ from .expressions import (
     Super,
     Parameter,
     Pair,
+    FieldUpdate,
     Argument,
     Type,
     IfExpression,
@@ -214,12 +215,26 @@ class ExpressionsParser(ParserControl):
         return expression
 
     def pair(self) -> Expression:
-        expression = self.term()
+        expression = self.field_update()
 
         while self.match(TokenType.RIGHT_ARROW):
             operator = self.previous()
-            right = self.term()
+            right = self.field_update()
             expression = Pair(expression, operator, right)
+
+        return expression
+
+    def field_update(self) -> Expression:
+        expression = self.term()
+
+        # Only allow : for field updates if left side is a Get expression
+        # This avoids conflict with named arguments which use Variable: expr
+        from .expressions import Get
+
+        if isinstance(expression, Get) and self.match(TokenType.COLON):
+            operator = self.previous()
+            right = self.term()
+            return FieldUpdate(expression, operator, right)
 
         return expression
 

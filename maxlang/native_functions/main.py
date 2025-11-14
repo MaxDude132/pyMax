@@ -66,6 +66,8 @@ class BaseInternalMethod(InternalCallable):
         )
 
     def upper_arity(self):
+        if self.parameters and self.parameters[-1].is_varargs:
+            return float("inf")
         return len(self.parameters)
 
     def get_class(self):
@@ -90,7 +92,7 @@ class BaseInternalMethod(InternalCallable):
         self.instance = instance
 
     def __str__(self):
-        return f"<method '{self.name.lexeme}' of class '{self.instance.class_name}'>"
+        return f"<method '{self.name.lexeme}' of '{self.instance.class_name}'>"
 
 
 class BaseInternalAttribute(InternalCallable):

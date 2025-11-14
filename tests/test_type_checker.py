@@ -1,4 +1,3 @@
-import pytest
 from .main import run_source, formatted_error
 
 
@@ -66,9 +65,6 @@ test(test_param_1, param2: 2)
     )
 
 
-@pytest.mark.skip(
-    reason="Type checker field validation disabled for Phase 1 - needs Map analysis"
-)
 def test_type_check_user_defined_function_with_user_defined_type():
     assert (
         run_source(
@@ -118,9 +114,6 @@ test(tester, param2: other_tester)
     )
 
 
-@pytest.mark.skip(
-    reason="Type checker field validation disabled for Phase 1 - needs Map analysis"
-)
 def test_type_check_works_with_superclasses():
     assert (
         run_source(

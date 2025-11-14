@@ -15,6 +15,10 @@ class Return(Exception):
         self.value = value
 
 
+# Sentinel value to indicate "no explicit return value" (different from "return null")
+_NO_RETURN_VALUE = object()
+
+
 class InternalCallable:
     def call(self, interpreter: "Interpreter", arguments: list[Any]) -> Any | None:
         pass
@@ -69,7 +73,7 @@ class FunctionCallable(InternalCallable):
         try:
             interpreter.execute_block(self.declaration.body, environment)
         except Return as ret:
-            if ret.value is None:
+            if ret.value is _NO_RETURN_VALUE:
                 return self.return_self()
 
             return ret.value
@@ -96,7 +100,7 @@ class FunctionCallable(InternalCallable):
 
     def __str__(self) -> str:
         if self.class_instance is not None and self.name is not None:
-            return f"<method {self.name.lexeme} of class {self.class_instance}>"
+            return f"<method {self.name.lexeme} of {self.class_instance}>"
         elif self.name is not None:
             return f"<function {self.name.lexeme}>"
         else:
@@ -233,16 +237,64 @@ class InstanceCopyMethod(InternalCallable):
             # Extract field name from Pair
             key = arg.first
             if isinstance(key, StringInstance):
-                field_name = key.value
+                field_path = key.value
+                # Handle nested paths like "address.city"
+                if "." in field_path:
+                    modifications[field_path] = arg.second
+                else:
+                    modifications[field_path] = arg.second
             else:
                 raise InterpreterError(
                     Token(TokenType.IDENTIFIER, "copy", None, -1),
                     f"Field name must be a String, got {type(key)}",
                 )
 
-            modifications[field_name] = arg.second
+        return self._apply_modifications(modifications)
 
-        return self.instance.copy(**modifications)
+    def _apply_modifications(self, modifications: dict[str, Any]) -> "InstanceCallable":
+        """Apply modifications, handling nested paths like 'address.city'."""
+        # Separate simple and nested modifications
+        simple_mods = {}
+        nested_mods = {}
+
+        for path, value in modifications.items():
+            if "." in path:
+                nested_mods[path] = value
+            else:
+                simple_mods[path] = value
+
+        # Apply simple modifications first
+        result = self.instance.copy(**simple_mods) if simple_mods else self.instance
+
+        # Apply nested modifications
+        for path, value in nested_mods.items():
+            parts = path.split(".", 1)  # Split into first field and rest
+            first_field = parts[0]
+            rest_path = parts[1]
+
+            # Validate first field exists
+            if first_field not in self.instance.fields:
+                raise InterpreterError(
+                    Token(TokenType.IDENTIFIER, "copy", None, -1),
+                    f"Cannot modify undefined field '{first_field}'. Class only defines: {', '.join(sorted(self.instance.fields.keys()))}",
+                )
+
+            # Get the nested object
+            nested_obj = result.fields.get(first_field)
+            if not isinstance(nested_obj, InstanceCallable):
+                raise InterpreterError(
+                    Token(TokenType.IDENTIFIER, "copy", None, -1),
+                    f"Cannot use nested path on non-object field '{first_field}'",
+                )
+
+            # Recursively update the nested object
+            nested_copy_method = InstanceCopyMethod(nested_obj)
+            updated_nested = nested_copy_method._apply_modifications({rest_path: value})
+
+            # Create a new copy of result with updated nested field
+            result = result.copy(**{first_field: updated_nested})
+
+        return result
 
     def check_arity(self, arg_count: int) -> bool:
         return True  # Accepts any number of arguments

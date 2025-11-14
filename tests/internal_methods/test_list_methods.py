@@ -96,3 +96,131 @@ print(test)
 
 def test_iterate():
     assert run_source("print(List(1, 2).iterate())") == "<ListIterator>"
+
+
+def test_list_varargs_push():
+    assert (
+        run_source(
+            """
+list = List()
+list = list.push(1, 2, 3, 4, 5)
+print(list)
+        """
+        )
+        == "List(1, 2, 3, 4, 5)"
+    )
+
+
+def test_method_chaining_lists():
+    assert (
+        run_source(
+            """
+list = List().push(1).push(2).push(3)
+print(list)
+        """
+        )
+        == "List(1, 2, 3)"
+    )
+
+
+def test_list_extend_immutability():
+    assert (
+        run_source(
+            """
+list1 = List(1, 2, 3)
+list2 = List(4, 5, 6)
+list3 = list1.extend(list2)
+
+print(list1)
+print(list3)
+        """
+        )
+        == "List(1, 2, 3)\nList(1, 2, 3, 4, 5, 6)"
+    )
+
+
+def test_list_pop_returns_pair():
+    assert (
+        run_source(
+            """
+list = List(1, 2, 3)
+result = list.pop()
+
+print(result.first)
+print(result.second)
+print(list)
+        """
+        )
+        == "List(1, 2)\n3\nList(1, 2, 3)"
+    )
+
+
+def test_structural_sharing_independence():
+    assert (
+        run_source(
+            """
+original = List(1, 2, 3)
+modified1 = original.push(4)
+modified2 = original.push(5)
+
+print(original)
+print(modified1)
+print(modified2)
+        """
+        )
+        == "List(1, 2, 3)\nList(1, 2, 3, 4)\nList(1, 2, 3, 5)"
+    )
+
+
+def test_length():
+    assert run_source("print(List().length())") == "0"
+    assert run_source("print(List(1).length())") == "1"
+    assert run_source("print(List(1, 2, 3).length())") == "3"
+    assert run_source("print(List(1, 2, 3, 4, 5).length())") == "5"
+
+
+def test_length_after_push():
+    assert (
+        run_source(
+            """
+list = List(1, 2, 3)
+print(list.length())
+list = list.push(4)
+print(list.length())
+        """
+        )
+        == "3\n4"
+    )
+
+
+def test_length_after_pop():
+    assert (
+        run_source(
+            """
+list = List(1, 2, 3)
+print(list.length())
+result = list.pop()
+new_list = result.first
+print(new_list.length())
+        """
+        )
+        == "3\n2"
+    )
+
+
+def test_length_nested_access():
+    assert (
+        run_source(
+            """
+class Container {
+    init: values {
+        return Map("items" -> values)
+    }
+}
+
+container = Container(List(10, 20, 30))
+print(container.items.length())
+        """
+        )
+        == "3"
+    )

@@ -3,7 +3,6 @@ from __future__ import annotations
 from ..main import BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from .BaseIterator import BaseIteratorClass, BaseIteratorInstance
-from ..BaseTypes.Next import NextInstance
 
 
 class MapIteratorNext(BaseInternalMethod):
@@ -17,20 +16,28 @@ class MapIteratorNext(BaseInternalMethod):
         return ObjectClass.name
 
     def call(self, interpreter, arguments):
-        from ..BaseTypes.Bool import BoolInstance
+        from ..BaseTypes.Pair import PairInstance
 
+        # If we're past the end, return None (special marker for end-of-iteration)
+        if self.instance.current >= self.instance.limit:
+            return None
+
+        # Get current value
         value = self.instance.pairs[self.instance.current]
-        is_end = BoolInstance(interpreter).set_value(self.instance.current == self.instance.limit - 1)
-        next_ = NextInstance(interpreter).set_values(value, is_end)
-        self.instance.current += 1
-        return next_
+
+        # Create new iterator with incremented position
+        new_iterator = MapIteratorInstance(interpreter)
+        new_iterator.value = self.instance.value
+        new_iterator.pairs = self.instance.pairs
+        new_iterator.limit = self.instance.limit
+        new_iterator.current = self.instance.current + 1
+
+        return PairInstance(interpreter).set_values(value, new_iterator)
 
 
 class MapIteratorClass(BaseIteratorClass):
     name = make_internal_token("MapIterator")
-    FIELDS = (
-        MapIteratorNext,
-    )
+    FIELDS = (MapIteratorNext,)
 
     @property
     def instance_class(self):

@@ -1,4 +1,3 @@
-import pytest
 from .main import run_source, formatted_error
 
 
@@ -97,9 +96,6 @@ for number in test {
     )
 
 
-@pytest.mark.skip(
-    reason="Type checker doesn't track iterator types from built-in collections"
-)
 def test_for_loop_on_user_defined_class_defining_iterate():
     assert (
         run_source(
@@ -129,7 +125,6 @@ for number in test {
     )
 
 
-@pytest.mark.skip(reason="Custom iterators require Phase 2 immutable iterator support")
 def test_for_loop_on_user_defined_class_defining_next():
     assert (
         run_source(
@@ -152,10 +147,12 @@ class CustomIterator {
 
     next {
         index = self.index
+        if index >= self.iterable.values.length() {
+            return null
+        }
         value = self.iterable.values.get(index)
-        self.index = index + 1
-        is_end = index >= self.iterable.values.length - 1
-        return Next(value, is_end)
+        new_iter = self.copy("index" -> (index + 1))
+        return value -> new_iter
     }
 }
 
@@ -178,4 +175,38 @@ for number in test {
         """
         )
         == "1\n2\n3"
+    )
+
+
+def test_user_defined_immutable_iterator():
+    assert (
+        run_source(
+            """
+class Range {
+    init: start, end {
+        return Map("start" -> start, "end" -> end, "current" -> start)
+    }
+    
+    iterate {
+        return self
+    }
+    
+    next {
+        if self.current >= self.end {
+            return null
+        }
+        value = self.current
+        new_range = self.copy("current" -> (self.current + 1))
+        return value -> new_range
+    }
+}
+
+range = Range(0, 3)
+for i in range {
+    print(i)
+}
+print(range.current)
+        """
+        )
+        == "0\n1\n2\n0"
     )

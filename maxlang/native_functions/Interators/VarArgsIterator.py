@@ -3,7 +3,6 @@ from __future__ import annotations
 from ..main import BaseInternalMethod, is_instance, make_internal_token
 from maxlang.errors import InternalError
 from .BaseIterator import BaseIteratorClass, BaseIteratorInstance
-from ..BaseTypes.Next import NextInstance
 
 
 class VarArgsIteratorNext(BaseInternalMethod):
@@ -17,20 +16,27 @@ class VarArgsIteratorNext(BaseInternalMethod):
         return ObjectClass.name
 
     def call(self, interpreter, arguments):
-        from ..BaseTypes.Bool import BoolInstance
+        from ..BaseTypes.Pair import PairInstance
 
+        # If we're past the end, return None (special marker for end-of-iteration)
+        if self.instance.current >= self.instance.limit:
+            return None
+
+        # Get current value
         value = self.instance.value.values[self.instance.current]
-        is_end = BoolInstance(interpreter).set_value(self.instance.current == self.instance.limit - 1)
-        next_ = NextInstance(interpreter).set_values(value, is_end)
-        self.instance.current += 1
-        return next_
+
+        # Create new iterator with incremented position
+        new_iterator = VarArgsIteratorInstance(interpreter)
+        new_iterator.value = self.instance.value
+        new_iterator.limit = self.instance.limit
+        new_iterator.current = self.instance.current + 1
+
+        return PairInstance(interpreter).set_values(value, new_iterator)
 
 
 class VarArgsIteratorClass(BaseIteratorClass):
     name = make_internal_token("VarArgsIterator")
-    FIELDS = (
-        VarArgsIteratorNext,
-    )
+    FIELDS = (VarArgsIteratorNext,)
 
     @property
     def instance_class(self):

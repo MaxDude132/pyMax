@@ -3,6 +3,7 @@ from .expressions import (
     Type,
     Variable,
     Super,
+    Self,
     Parameter,
     Literal,
     Binary,
@@ -177,8 +178,10 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         call_token: Token,
     ):
         for attr in required_attributes:
-            if attr.lexeme not in obj_type.methods and not self.get_method_from_super(
-                obj_type, attr
+            if (
+                attr.lexeme not in obj_type.methods
+                and attr.lexeme not in obj_type.field_types
+                and not self.get_method_from_super(obj_type, attr)
             ):
                 self.parser_error(
                     call_token,
@@ -246,6 +249,12 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
         if isinstance(new_type, Deferred):
             return old_type
+
+        # Handle None type (unknown return type)
+        if new_type is None:
+            return old_type
+        if old_type is None:
+            return new_type
 
         # If both are parameter types, they're compatible
         if old_type.klass is object and new_type.klass is object:
@@ -1017,6 +1026,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         return self.get_type(expression.name, raise_error=True)
 
     def visit_literal(self, expression):
+        if expression.type_.klass is None:
+            # null literal - return None as type (representing end of iteration)
+            return None
         return self.resolve(expression.type_.klass.name)
 
     def visit_assignment(self, expression):
@@ -1053,6 +1065,11 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         ]
         klass = ClassCallable(statement.name, [s.klass for s in superclasses], {})
         type_ = Type(klass, statement.name, superclasses=superclasses)
+
+        # Inherit field_types from superclasses
+        for superclass in superclasses:
+            type_.field_types.update(superclass.field_types)
+
         self.variables[-1][statement.name.lexeme] = type_
 
         self.begin_scope()
@@ -1141,23 +1158,93 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
             # Return a generic object type since we don't know the element type yet
             return Type(object, expression.name)
 
+        # If we're accessing an attribute on 'self', try to infer the field type
+        if isinstance(expression.obj, Self) and self.current_class is not None:
+            # Check if it's a method first
+            class_type = self.resolve(self.current_class)
+            ret = class_type.methods.get(expression.name.lexeme)
+            if ret is not None:
+                return ret
+
+            # Not a method - it's a field. Check if we have type information for it
+            field_type = class_type.field_types.get(expression.name.lexeme)
+            if field_type is not None:
+                return field_type
+
+            # No type information available - return a generic object type
+            return Type(object, expression.name)
+
         # Handle None type (void)
         if obj is None:
             return None
+
+        # If obj represents an attribute/method with a return type (not a class),
+        # we need to use the return type for further lookups
+        # Check if obj.klass has a 'call' method (indicating it's a method instance)
+        # But make sure it's not a class itself (classes also have call for instantiation)
+        from maxlang.native_functions.main import (
+            BaseInternalClass,
+            BaseInternalMethod,
+            BaseInternalAttribute,
+        )
+
+        is_method_or_attribute = (
+            hasattr(obj.klass, "call")
+            and obj.return_type is not None
+            and not isinstance(obj.klass, type)  # Not a Python class
+            and not isinstance(
+                obj.klass, BaseInternalClass
+            )  # Not an internal class definition
+            and (
+                isinstance(obj.klass, BaseInternalMethod)
+                or isinstance(obj.klass, BaseInternalAttribute)
+            )  # IS a method or attribute instance
+        )
+        if is_method_or_attribute:
+            obj = obj.return_type
 
         ret = obj.methods.get(expression.name.lexeme)
 
         if ret is None:
             ret = self.get_method_from_super(obj, expression.name)
 
-        # TODO: With map-based init, we can't validate fields at type-check time
-        # We need to analyze the Map returned by init to extract field names
-        # For now, skip this validation to allow map-based init to work
-        # if ret is None and not isinstance(obj.klass, type):
-        #     self.parser_error(
-        #         expression.name,
-        #         f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.",
-        #     )
+        # Check if it's a field (for Map-based init classes)
+        if ret is None and expression.name.lexeme in obj.field_types:
+            return obj.field_types[expression.name.lexeme]
+
+        # Check for built-in instance methods (like 'copy')
+        if ret is None and expression.name.lexeme == "copy":
+            # Create a Type for the copy method that accepts varargs and returns the same type
+            from maxlang.parse.expressions import Parameter
+            from maxlang.lex import TokenType
+
+            copy_param = Parameter(
+                Token(TokenType.IDENTIFIER, "modifications", None, -1), is_varargs=True
+            )
+            return Type(
+                object,  # Generic klass since it's a built-in method
+                expression.name,
+                parameters=[copy_param],
+                return_type=obj,  # copy returns the same type as the instance
+            )
+
+        # If we still haven't found it and this is a user-defined class, report an error
+        # Skip validation only if:
+        # - The type is a Python built-in type (isinstance(obj.klass, type))
+        # - The type is the generic 'object' placeholder
+        # - The type is Object class specifically (used as a placeholder for unknown types)
+        from maxlang.native_functions.BaseTypes.Object import ObjectClass
+
+        if (
+            ret is None
+            and not isinstance(obj.klass, type)
+            and obj.klass is not object
+            and not isinstance(obj.klass, ObjectClass)
+        ):
+            self.parser_error(
+                expression.name,
+                f"Attribute {expression.name.lexeme} not found for class {obj.klass.name.lexeme}.",
+            )
 
         return ret
 
@@ -1232,7 +1319,36 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
         return_path = self.analyze_return_path(statement.value)
         self.current_function_return_paths.append(return_path)
 
+        # Extract field types from Map-based init methods
+        if (
+            self.current_function is not None
+            and self.current_function.lexeme == "init"
+            and self.current_class is not None
+            and isinstance(statement.value, Call)
+            and hasattr(statement.value.callee, "name")
+            and statement.value.callee.name.lexeme == "Map"
+        ):
+            # This is an init method returning Map(...) - extract field types
+            self._extract_field_types_from_map(statement.value)
+
         return ret
+
+    def _extract_field_types_from_map(self, map_call: Call):
+        """Extract field types from a Map(...) constructor call in an init method."""
+        class_type = self.resolve(self.current_class)
+
+        for arg in map_call.arguments:
+            # Each argument should be a Pair expression like "fieldname" -> value
+            if isinstance(arg.value, Pair):
+                # Left side of pair should be a string literal (field name)
+                if isinstance(arg.value.left, Literal) and isinstance(
+                    arg.value.left.value, str
+                ):
+                    field_name = arg.value.left.value
+                    # Right side is the value expression - get its type
+                    field_type = self.check(arg.value.right)
+                    # Store the field type
+                    class_type.field_types[field_name] = field_type
 
     def visit_if_expression(self, expression):
         then_type = self.check(expression.then_branch)
@@ -1293,6 +1409,9 @@ class TypeChecker(ExpressionVisitor, StatementVisitor):
 
     def visit_pair(self, expression):
         return self.resolve(PairClass.name)
+
+    def visit_field_update(self, expression):
+        return self.check(expression.obj.obj)
 
     def visit_binary(self, expression):
         left_type = self.check(expression.left)

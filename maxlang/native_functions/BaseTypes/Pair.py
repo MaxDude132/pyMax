@@ -27,7 +27,7 @@ class PairFirst(BaseInternalAttribute):
     name = make_internal_token("first")
 
     @property
-    def return_type(self):
+    def return_token(self):
         from .Object import ObjectClass
 
         return ObjectClass.name
@@ -40,7 +40,7 @@ class PairSecond(BaseInternalAttribute):
     name = make_internal_token("second")
 
     @property
-    def return_type(self):
+    def return_token(self):
         from .Object import ObjectClass
 
         return ObjectClass.name

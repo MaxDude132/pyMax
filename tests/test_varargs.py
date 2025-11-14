@@ -1,4 +1,3 @@
-import pytest
 from .main import run_source, formatted_error
 
 
@@ -46,9 +45,6 @@ print(test)
     ) == formatted_error("Error at 'VarArgs': Undefined variable 'VarArgs'.", 2)
 
 
-@pytest.mark.skip(
-    reason="Type checker limitation - calling method on VarArgs doesn't validate element types"
-)
 def test_varargs_type_is_handled():
     assert run_source(
         """

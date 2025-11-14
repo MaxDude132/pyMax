@@ -58,9 +58,11 @@ class ListPop(BaseInternalMethod):
         # Get the last item
         last_item = self.instance._get_value(total_len - 1)
 
-        # Create new list without last item
-        new_list = self.instance._copy()
-        new_list.modifications[total_len - 1] = None  # Mark as removed
+        # Create new list without last item by compacting all but the last
+        new_list = ListInstance(interpreter)
+        new_list.base_values = [
+            self.instance._get_value(i) for i in range(total_len - 1)
+        ]
 
         # Return Pair(new_list, popped_value)
         return PairInstance(interpreter).set_values(new_list, last_item)
@@ -251,6 +253,21 @@ class ListEquals(BaseInternalMethod):
         )
 
 
+class ListLength(BaseInternalMethod):
+    name = make_internal_token("length")
+
+    @property
+    def return_token(self):
+        from .Int import IntClass
+
+        return IntClass.name
+
+    def call(self, interpreter, arguments):
+        from .Int import IntInstance
+
+        return IntInstance(interpreter).set_value(self.instance._total_length())
+
+
 class ListToBool(BaseInternalMethod):
     name = make_internal_token("toBool")
 
@@ -300,6 +317,7 @@ class ListClass(BaseInternalClass):
         ListAdd,
         ListMultiply,
         ListEquals,
+        ListLength,
         ListToBool,
         ListToString,
     )

@@ -176,6 +176,9 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         raise InterpreterError(expression.name, "Only instances have properties.")
 
     def visit_literal(self, expression):
+        if expression.type_.klass is None:
+            # null literal - return None (used for end of iteration)
+            return None
         klass = self.get_class(expression.type_.klass.name)
         try:
             return klass.instance_class(self).set_value(expression.value)
@@ -287,28 +290,19 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
             )
 
         while True:
-            next_result = self.call(expression.operator, next_method, [])
+            # next() now returns Pair(value, new_iterator) or None when done
+            pair = self.call(expression.operator, next_method, [])
 
-            # Get the value first - access it directly
-            try:
-                value = next_result.value
-                values.append(value)
-            except AttributeError:
-                raise InterpreterError(
-                    expression.operator,
-                    f"Next result {next_result.class_name} does not have value attribute.",
-                )
+            # Check if we've reached the end (None returned)
+            if pair is None:
+                break
 
-            # Check if we're done iterating AFTER adding the value
-            try:
-                is_end = next_result.internal_find_method("is_end").value
-                if is_end:
-                    break
-            except (KeyError, AttributeError):
-                raise InterpreterError(
-                    expression.operator,
-                    f"Next result {next_result.class_name} does not have is_end attribute.",
-                )
+            # Append the value
+            values.append(pair.first)
+
+            # Update iterator for next iteration
+            iterator = pair.second
+            next_method = iterator.internal_find_method("next")
 
         # Return a special marker tuple so build_arguments knows to unpack
         return ("__unpack__", values)
@@ -359,6 +353,34 @@ class ExpressionInterpreter(InterpreterBase, ExpressionVisitor):
         return PairInstance(self).set_values(
             self.evaluate(expression.left), self.evaluate(expression.right)
         )
+
+    def visit_field_update(self, expression):
+        from maxlang.native_functions.BaseTypes.String import StringInstance
+        from .expressions import Get
+
+        # The left side must be a Get expression (obj.field)
+        if not isinstance(expression.obj, Get):
+            raise InterpreterError(
+                expression.operator,
+                "Left side of : must be a field access (e.g., obj.field)",
+            )
+
+        # Evaluate the object
+        obj = self.evaluate(expression.obj.obj)
+
+        # Get the field name
+        field_name = expression.obj.name.lexeme
+
+        # Create a Pair with field name and value
+        from maxlang.native_functions.BaseTypes.Pair import PairInstance
+
+        pair = PairInstance(self).set_values(
+            StringInstance(self).set_value(field_name), self.evaluate(expression.value)
+        )
+
+        # Call copy() on the object
+        copy_method = obj.get(Token(TokenType.IDENTIFIER, "copy", None, -1))
+        return copy_method.call(self, [pair])
 
     def visit_if_expression(self, expression):
         isTrue = self.evaluate(expression.condition)
@@ -447,7 +469,9 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         return statement.name
 
     def visit_return_statement(self, statement):
-        value = None
+        from .callable import _NO_RETURN_VALUE
+
+        value = _NO_RETURN_VALUE
         if statement.value is not None:
             value = self.evaluate(statement.value)
 
@@ -478,22 +502,26 @@ class StatementInterpreter(ExpressionInterpreter, StatementVisitor):
         previous = self.environment
         self.environment = Environment(self.environment)
 
-        for_name = self.evaluate(statement.for_name)
         in_name = self.evaluate(statement.in_name)
         try:
             iterator = in_name.internal_find_method("iterate").call(self, [])
         except InternalError:
             raise InterpreterError(
                 statement.keyword,
-                "Cannot iterate over instance of class that does not implement 'iterate'.",
+                "Cannot iterate over instance of that does not implement 'iterate'.",
             )
 
         while True:
-            next_ = self.get_next(iterator, statement)
-            self.environment.assign(for_name, next_.value)
-            self.execute_block(statement.body, self.environment)
-            if next_.internal_find_method("is_end").value:
+            pair = self.get_next(iterator, statement)
+
+            if pair is None:
                 break
+
+            self.environment.define(statement.for_name.name, pair.first)
+
+            self.execute_block(statement.body, self.environment)
+
+            iterator = pair.second
 
         self.environment = previous
 

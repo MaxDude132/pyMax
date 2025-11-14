@@ -208,6 +208,21 @@ class MapEquals(BaseInternalMethod):
         )
 
 
+class MapLength(BaseInternalMethod):
+    name = make_internal_token("length")
+
+    @property
+    def return_token(self):
+        from .Int import IntClass
+
+        return IntClass.name
+
+    def call(self, interpreter, arguments):
+        from .Int import IntInstance
+
+        return IntInstance(interpreter).set_value(len(self.instance._all_keys()))
+
+
 class MapToBool(BaseInternalMethod):
     name = make_internal_token("toBool")
 
@@ -257,6 +272,7 @@ class MapClass(BaseInternalClass):
         MapIterate,
         MapAdd,
         MapEquals,
+        MapLength,
         MapToBool,
         MapToString,
     )

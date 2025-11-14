@@ -105,3 +105,98 @@ def test_iterate():
     assert (
         run_source("print(Map(1 -> 'test', 2 -> 'test2').iterate())") == "<MapIterator>"
     )
+
+
+def test_map_varargs_push():
+    assert (
+        run_source(
+            """
+map = Map()
+map = map.push(1 -> "one", 2 -> "two", 3 -> "three")
+print(map.get(1))
+print(map.get(2))
+print(map.get(3))
+        """
+        )
+        == "one\ntwo\nthree"
+    )
+
+
+def test_method_chaining_maps():
+    assert (
+        run_source(
+            """
+map = Map().push(1 -> "a").push(2 -> "b").push(3 -> "c")
+print(map.get(2))
+        """
+        )
+        == "b"
+    )
+
+
+def test_map_remove_returns_pair():
+    assert (
+        run_source(
+            """
+map = Map(1 -> "one", 2 -> "two")
+result = map.remove(1)
+
+print(result.second)
+print(map.get(1))
+        """
+        )
+        == "one\none"
+    )
+
+
+def test_length():
+    assert run_source("print(Map().length())") == "0"
+    assert run_source("print(Map(1 -> 'a').length())") == "1"
+    assert run_source("print(Map(1 -> 'a', 2 -> 'b', 3 -> 'c').length())") == "3"
+
+
+def test_length_after_push():
+    assert (
+        run_source(
+            """
+map = Map(1 -> "a", 2 -> "b")
+print(map.length())
+map = map.push(3 -> "c")
+print(map.length())
+        """
+        )
+        == "2\n3"
+    )
+
+
+def test_length_after_remove():
+    assert (
+        run_source(
+            """
+map = Map(1 -> "a", 2 -> "b", 3 -> "c")
+print(map.length())
+result = map.remove(2)
+new_map = result.first
+print(new_map.length())
+        """
+        )
+        == "3\n2"
+    )
+
+
+def test_length_nested_access():
+    assert (
+        run_source(
+            """
+class Container {
+    init: data {
+        return Map("storage" -> data)
+    }
+}
+
+container = Container(Map(1 -> "x", 2 -> "y"))
+print(container.storage.length())
+        """
+        )
+        == "2"
+    )
