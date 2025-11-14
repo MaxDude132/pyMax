@@ -332,7 +332,7 @@ class ListClass(BaseInternalClass):
 
 class ListInstance(BaseInternalInstance):
     CLASS = ListClass
-    COMPACTION_THRESHOLD = 10
+    COMPACTION_THRESHOLD = 100
 
     def __init__(self, interpreter):
         super().__init__(interpreter)
